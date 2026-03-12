@@ -72,12 +72,12 @@ function HomeContent() {
         }}
       />
 
-      {/* Overlay para lectura: oscurece arriba y abajo, centro más ligero */}
+      {/* Overlay para lectura */}
       <div
         className="fixed inset-0 z-10"
         style={{
           backgroundImage:
-            "linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.30) 35%, rgba(0,0,0,0.35) 65%, rgba(0,0,0,0.80) 100%)",
+            "linear-gradient(to bottom, rgba(0,0,0,0.50) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.35) 65%, rgba(0,0,0,0.75) 100%)",
         }}
       />
 
