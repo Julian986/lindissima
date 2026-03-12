@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { Montserrat, Playfair_Display } from "next/font/google";
 import "./globals.css";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  weight: ["400", "500", "600"],
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  weight: ["500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "LINDISSIMA Beauty App",
@@ -14,7 +27,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="min-h-screen bg-[#111111] text-white antialiased">
+      <body
+        className={`${montserrat.variable} ${playfair.variable} min-h-screen bg-[#111111] text-white antialiased`}
+      >
         {children}
       </body>
     </html>

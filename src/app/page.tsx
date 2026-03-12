@@ -2,24 +2,54 @@
 
 import { useEffect, useState } from "react";
 
+function CrownLogo() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 120 72"
+      className="h-9 w-[4.5rem] text-[var(--premium-gold)]"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 54L27 26L45 40L60 14L75 40L93 26L102 54"
+        stroke="currentColor"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M27 54H93"
+        stroke="currentColor"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+      />
+      <circle cx="27" cy="22" r="5" fill="currentColor" />
+      <circle cx="60" cy="10" r="5.5" fill="currentColor" />
+      <circle cx="93" cy="22" r="5" fill="currentColor" />
+    </svg>
+  );
+}
+
 function SplashScreen() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#111111] text-white">
       <div className="flex w-full max-w-md flex-col items-center px-6">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="inline-flex flex-col items-center gap-1">
-            <div className="text-3xl font-semibold tracking-[0.25em]">
+          <div className="inline-flex flex-col items-center gap-2">
+            <CrownLogo />
+            <div className="text-3xl font-medium tracking-[0.25em] font-heading">
               LINDISSIMA
             </div>
-            <div className="text-xs uppercase tracking-[0.25em] text-zinc-400">
+            <div className="text-xs tracking-[0.25em] text-[var(--soft-gray)]/80">
               Láser & Treatments
             </div>
           </div>
         </div>
 
         {/* Frase */}
-        <p className="max-w-xs text-center text-sm leading-relaxed text-zinc-300">
+        <p className="max-w-xs text-center text-sm leading-relaxed text-[var(--soft-gray)]">
           Tecnología estética avanzada para cuidar y realzar tu belleza natural.
         </p>
       </div>
@@ -29,131 +59,124 @@ function SplashScreen() {
 
 function HomeContent() {
   return (
-    <div className="relative flex min-h-screen flex-col items-center overflow-hidden text-white">
-      {/* Capa de imagen de fondo */}
+    <div className="relative min-h-dvh overflow-hidden bg-[#111111] text-white">
+      {/* Fondo fijo de la pantalla */}
       <div
-        className="absolute inset-0 -z-10"
+        className="fixed inset-0 z-0"
         style={{
           backgroundImage: "url('/fondo_home.jpg')",
           backgroundSize: "cover",
-          backgroundPosition: "center 35%",
+          backgroundPosition: "center 28%",
           backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
         }}
       />
 
-      {/* Capa de overlay oscuro */}
+      {/* Overlay para lectura: oscurece arriba y abajo, centro más ligero */}
       <div
-        className="absolute inset-0 -z-10"
+        className="fixed inset-0 z-10"
         style={{
           backgroundImage:
-            "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.45) 70%, rgba(0,0,0,0.75) 100%)",
+            "linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.30) 35%, rgba(0,0,0,0.35) 65%, rgba(0,0,0,0.80) 100%)",
         }}
       />
 
-      <main className="relative z-10 flex w-full max-w-md flex-1 flex-col px-5 pt-6 pb-24">
-        {/* Header pequeño con logo */}
-        <header className="mb-10 flex justify-center">
-          <div className="inline-flex flex-col items-center gap-1">
-            <div className="h-7 w-7 rounded-full border border-[#C9A96A]/60 bg-gradient-to-b from-[#e7d1a0] to-[#C9A96A]" />
-            <div className="mt-1 text-[18px] font-semibold tracking-[0.28em] font-heading">
+      <main className="relative z-20 mx-auto min-h-dvh w-full max-w-md px-5 pt-20 pb-28">
+        <header className="flex justify-center">
+          <div className="inline-flex flex-col items-center gap-1 text-center">
+            <CrownLogo />
+            <div className="text-[19px] font-medium tracking-[0.26em] text-white font-heading">
               LINDISSIMA
             </div>
-            <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-400">
+            <div className="text-[10px] tracking-[0.28em] text-[var(--soft-gray)]/90">
               Láser & Treatments
             </div>
           </div>
         </header>
 
-        {/* Copy principal y CTAs sobre el fondo */}
-        <section className="mt-auto mb-6">
-          <h1 className="mb-4 text-center text-[22px] font-semibold leading-snug text-white font-heading">
-            Belleza, tecnología y cuidado profesional
-          </h1>
-          <div className="space-y-2">
-            <button className="flex w-full items-center justify-center rounded-full bg-[#C9A96A] px-6 py-3 text-[13px] font-semibold uppercase tracking-[0.18em] text-black shadow-[0_16px_40px_rgba(0,0,0,0.75)] transition-transform hover:scale-[1.02]">
-              Reservar turno
-            </button>
-            <button className="flex w-full items-center justify-center rounded-full bg-black/60 px-6 py-3 text-[13px] font-medium uppercase tracking-[0.16em] text-white ring-1 ring-zinc-700/80">
-              Tratamientos
-            </button>
-            <button className="flex w-full items-center justify-center rounded-full bg-black/60 px-6 py-3 text-[13px] font-medium uppercase tracking-[0.16em] text-white ring-1 ring-zinc-700/80">
-              Promociones
-            </button>
-          </div>
-        </section>
+        <div className="mt-[31vh] space-y-4">
+          <section className="pb-1">
+            <h1 className="mx-auto mb-6 max-w-[15ch] text-center text-[20px] font-medium leading-[1.28] text-white font-heading">
+              Belleza, tecnología y cuidado profesional
+            </h1>
+            <div className="mx-auto flex w-[84%] flex-col gap-3">
+              <button className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[12px] font-semibold tracking-[0.14em] text-[#1f1b16] shadow-[0_16px_36px_rgba(0,0,0,0.45)]">
+                Reservar turno
+              </button>
+              <button className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[12px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+                Tratamientos
+              </button>
+              <button className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[12px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+                Promociones
+              </button>
+            </div>
+          </section>
 
-        {/* Botones secundarios extras */}
-        <section className="mb-6 space-y-2">
-          <button className="flex w-full items-center justify-center rounded-full bg-black/60 px-6 py-3 text-[13px] font-medium uppercase tracking-[0.16em] text-white ring-1 ring-zinc-700/70">
-            Antes y después
-          </button>
-          <button className="flex w-full items-center justify-center rounded-full bg-black/60 px-6 py-3 text-[13px] font-medium uppercase tracking-[0.16em] text-white ring-1 ring-zinc-700/70">
-            Contacto
-          </button>
-        </section>
+          <section className="mx-auto w-[84%] space-y-3">
+            <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[12px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+              Antes y después
+            </button>
+            <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[12px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+              Contacto
+            </button>
+          </section>
 
-        {/* Promo destacada */}
-        <section className="mt-2 space-y-3">
-          <h2 className="text-xs uppercase tracking-[0.25em] text-zinc-500">
-            Promoción del mes
-          </h2>
-          <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900/90 via-zinc-900 to-black shadow-[0_18px_45px_rgba(0,0,0,0.8)]">
-            <div className="px-5 py-4">
-              <p className="text-[11px] uppercase tracking-[0.25em] text-[#C9A96A]">
-                Glow Facial
-              </p>
-              <h3 className="mt-1 text-base font-semibold">
+          <section className="mx-auto w-[84%]">
+            <div className="mb-3 text-[10px] tracking-[0.24em] text-[var(--soft-gray)]/70">
+              PROMOCION DESTACADA DEL MES
+            </div>
+            <div className="rounded-[28px] border border-white/8 bg-black/50 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.4)] backdrop-blur-[14px]">
+              <div className="text-[10px] tracking-[0.24em] text-[var(--premium-gold)]">
+                GLOW FACIAL
+              </div>
+              <h2 className="mt-2 text-lg leading-tight text-white font-heading">
                 Limpieza profunda + Dermapen
-              </h3>
-              <p className="mt-2 text-xs text-zinc-300">
+              </h2>
+              <p className="mt-2 text-xs leading-relaxed text-[var(--soft-gray)]">
                 Lográ una piel luminosa, uniforme y libre de impurezas.
               </p>
-              <p className="mt-2 text-[11px] text-zinc-500">
-                Duración: 90 min · Cupos limitados
-              </p>
-              <div className="mt-4 flex items-center justify-between">
-                <button className="rounded-full bg-[#C9A96A] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-black">
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <button className="flex h-10 items-center justify-center rounded-full bg-[var(--premium-gold)] px-5 text-[11px] font-semibold tracking-[0.14em] text-[#1f1b16]">
                   Reservar ahora
                 </button>
-                <span className="text-[11px] text-zinc-500">
-                  Promo válida este mes
+                <span className="text-[10px] tracking-[0.08em] text-[var(--soft-gray)]/75">
+                  Cupos limitados
                 </span>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </main>
 
-      {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 flex justify-center bg-gradient-to-t from-black via-black/95 to-black/60 pb-4 pt-3">
-        <div className="flex w-full max-w-md items-center justify-between rounded-full border border-zinc-800 bg-black/80 px-5 py-2 backdrop-blur-xl">
-          <button className="flex flex-1 flex-col items-center gap-0.5 text-[11px]">
-            <span className="h-5 w-5 rounded-full bg-[#C9A96A]" />
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#C9A96A]">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex justify-center px-4 pb-4">
+        <div className="flex w-full max-w-md items-center justify-between rounded-[28px] border border-white/8 bg-black/45 px-4 py-2.5 backdrop-blur-[16px]">
+          <button className="flex min-w-0 flex-1 flex-col items-center gap-1">
+            <span className="h-5 w-5 rounded-full bg-[var(--premium-gold)]" />
+            <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">
               Inicio
             </span>
           </button>
-          <button className="flex flex-1 flex-col items-center gap-0.5 text-[11px] text-zinc-500">
-            <span className="h-5 w-5 rounded-full border border-zinc-600" />
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em]">
+          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+            <span className="h-5 w-5 rounded-full border border-zinc-500/80" />
+            <span className="text-[9px] tracking-[0.12em]">
               Tratamientos
             </span>
           </button>
-          <button className="flex flex-1 flex-col items-center gap-0.5 text-[11px] text-zinc-500">
-            <span className="h-5 w-5 rounded-full border border-zinc-600" />
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em]">
+          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+            <span className="h-5 w-5 rounded-full border border-zinc-500/80" />
+            <span className="text-[9px] tracking-[0.12em]">
               Turnos
             </span>
           </button>
-          <button className="flex flex-1 flex-col items-center gap-0.5 text-[11px] text-zinc-500">
-            <span className="h-5 w-5 rounded-full border border-zinc-600" />
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em]">
+          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+            <span className="h-5 w-5 rounded-full border border-zinc-500/80" />
+            <span className="text-[9px] tracking-[0.12em]">
               Promos
             </span>
           </button>
-          <button className="flex flex-1 flex-col items-center gap-0.5 text-[11px] text-zinc-500">
-            <span className="h-5 w-5 rounded-full border border-zinc-600" />
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em]">
+          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+            <span className="h-5 w-5 rounded-full border border-zinc-500/80" />
+            <span className="text-[9px] tracking-[0.12em]">
               Perfil
             </span>
           </button>
