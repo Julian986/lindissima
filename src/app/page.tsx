@@ -1,5 +1,6 @@
 "use client";
 
+import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
 function CrownLogo() {
@@ -86,7 +87,7 @@ function HomeContent() {
         <header className="flex justify-center">
           <div className="inline-flex flex-col items-center gap-1 text-center">
             <CrownLogo />
-            <div className="text-[19px] font-medium tracking-[0.26em] text-white font-heading">
+            <div className="text-[24px] font-medium tracking-[0.26em] text-white font-heading">
               LINDISSIMA
             </div>
             <div className="text-[10px] tracking-[0.28em] text-[var(--soft-gray)]/90">
@@ -151,34 +152,34 @@ function HomeContent() {
         </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex justify-center px-4 pb-4">
-        <div className="flex w-full max-w-md items-center justify-between rounded-[28px] border border-white/8 bg-black/45 px-4 py-2.5 backdrop-blur-[16px]">
+      <nav className="fixed bottom-0 left-0 right-0 z-30">
+        <div className="flex w-full items-center justify-between border-t border-white/8 bg-black/60 px-4 py-2.5 backdrop-blur-[16px]">
           <button className="flex min-w-0 flex-1 flex-col items-center gap-1">
-            <span className="h-5 w-5 rounded-full bg-[var(--premium-gold)]" />
+            <HomeIcon className="h-5 w-5 text-[var(--premium-gold)]" strokeWidth={1.9} />
             <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">
               Inicio
             </span>
           </button>
           <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <span className="h-5 w-5 rounded-full border border-zinc-500/80" />
+            <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
               Tratamientos
             </span>
           </button>
           <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <span className="h-5 w-5 rounded-full border border-zinc-500/80" />
+            <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
               Turnos
             </span>
           </button>
           <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <span className="h-5 w-5 rounded-full border border-zinc-500/80" />
+            <Percent className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
               Promos
             </span>
           </button>
           <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <span className="h-5 w-5 rounded-full border border-zinc-500/80" />
+            <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
               Perfil
             </span>
@@ -195,7 +196,7 @@ export default function Home() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setShowSplash(false);
-    }, 2500);
+    }, 2000);
 
     return () => clearTimeout(timeout);
   }, []);
