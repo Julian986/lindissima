@@ -59,29 +59,30 @@ function SplashScreen() {
 
 function HomeContent() {
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-[#111111] text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#111111] text-white">
       {/* Fondo fijo de la pantalla */}
       <div
-        className="fixed inset-0 z-0"
+        className="fixed top-0 right-0 left-0 z-0"
         style={{
+          height: "100svh",
           backgroundImage: "url('/fondo_home.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center 28%",
           backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed",
         }}
       />
 
       {/* Overlay para lectura */}
       <div
-        className="fixed inset-0 z-10"
+        className="fixed top-0 right-0 left-0 z-10"
         style={{
+          height: "100svh",
           backgroundImage:
-            "linear-gradient(to bottom, rgba(0,0,0,0.50) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.35) 65%, rgba(0,0,0,0.75) 100%)",
+            "linear-gradient(to bottom, rgba(17,17,17,0.98) 0%, rgba(17,17,17,0.88) 16%, rgba(17,17,17,0.48) 38%, rgba(17,17,17,0.22) 54%, rgba(17,17,17,0.62) 68%, rgba(17,17,17,0.94) 84%, rgba(17,17,17,1) 100%)",
         }}
       />
 
-      <main className="relative z-20 mx-auto min-h-dvh w-full max-w-md px-5 pt-20 pb-28">
+      <main className="relative z-20 mx-auto min-h-screen w-full max-w-md px-5 pt-20 pb-28">
         <header className="flex justify-center">
           <div className="inline-flex flex-col items-center gap-1 text-center">
             <CrownLogo />
@@ -96,27 +97,29 @@ function HomeContent() {
 
         <div className="mt-[31vh] space-y-4">
           <section className="pb-1">
-            <h1 className="mx-auto mb-6 max-w-[15ch] text-center text-[20px] font-medium leading-[1.28] text-white font-heading">
-              Belleza, tecnología y cuidado profesional
+            <h1 className="mx-auto mb-6 text-center text-[26px] font-normal leading-[1.28] text-white font-heading">
+              Belleza, tecnología
+              <br />
+              <span className="whitespace-nowrap">y cuidado profesional</span>
             </h1>
             <div className="mx-auto flex w-[84%] flex-col gap-3">
-              <button className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[12px] font-semibold tracking-[0.14em] text-[#1f1b16] shadow-[0_16px_36px_rgba(0,0,0,0.45)]">
+              <button className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[16px] font-semibold tracking-[0.14em] text-[#1f1b16] shadow-[0_16px_36px_rgba(0,0,0,0.45)]">
                 Reservar turno
               </button>
-              <button className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[12px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+              <button className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
                 Tratamientos
               </button>
-              <button className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[12px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+              <button className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
                 Promociones
               </button>
             </div>
           </section>
 
           <section className="mx-auto w-[84%] space-y-3">
-            <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[12px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+            <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
               Antes y después
             </button>
-            <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[12px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+            <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
               Contacto
             </button>
           </section>
@@ -136,7 +139,7 @@ function HomeContent() {
                 Lográ una piel luminosa, uniforme y libre de impurezas.
               </p>
               <div className="mt-3 flex items-center justify-between gap-3">
-                <button className="flex h-10 items-center justify-center rounded-full bg-[var(--premium-gold)] px-5 text-[11px] font-semibold tracking-[0.14em] text-[#1f1b16]">
+                <button className="flex h-10 items-center justify-center rounded-full bg-[var(--premium-gold)] px-5 text-[12px] font-semibold tracking-[0.14em] text-[#1f1b16]">
                   Reservar ahora
                 </button>
                 <span className="text-[10px] tracking-[0.08em] text-[var(--soft-gray)]/75">
