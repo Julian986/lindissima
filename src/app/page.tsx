@@ -66,7 +66,8 @@ function HomeContent() {
         className="fixed top-0 right-0 left-0 z-0"
         style={{
           height: "100svh",
-          backgroundImage: "url('/fondo_home.jpg')",
+          backgroundImage:
+            "url('https://res.cloudinary.com/dzoupwn0e/image/upload/v1773419875/fondo_home_3_q3kumw.webp')",
           backgroundSize: "cover",
           backgroundPosition: "center 28%",
           backgroundRepeat: "no-repeat",

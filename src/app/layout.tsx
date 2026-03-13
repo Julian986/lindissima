@@ -25,8 +25,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const heroImageUrl =
+    "https://res.cloudinary.com/dzoupwn0e/image/upload/v1773419875/fondo_home_3_q3kumw.webp";
+
   return (
     <html lang="es">
+      <head>
+        <link rel="preload" href={heroImageUrl} as="image" />
+      </head>
       <body
         className={`${montserrat.variable} ${playfair.variable} min-h-screen bg-[#111111] text-white antialiased`}
       >
