@@ -163,10 +163,10 @@ export default function PromotionsPage() {
               Promos
             </span>
           </Link>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">Perfil</span>
-          </button>
+          </Link>
         </div>
       </nav>
     </div>

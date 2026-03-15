@@ -217,6 +217,15 @@ export default function TreatmentsPage() {
           })}
         </section>
 
+        <div className="mb-4">
+          <Link
+            href="/antes-y-despues"
+            className="flex h-10 w-full items-center justify-center rounded-full border border-white/8 bg-black/45 text-[13px] font-medium text-[var(--soft-gray)]"
+          >
+            Ver antes y después
+          </Link>
+        </div>
+
         <section className="grid grid-cols-2 gap-3">
           {filteredServices.map((service) => (
             <article
@@ -271,10 +280,10 @@ export default function TreatmentsPage() {
             <Percent className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">Promos</span>
           </Link>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">Perfil</span>
-          </button>
+          </Link>
         </div>
       </nav>
     </div>

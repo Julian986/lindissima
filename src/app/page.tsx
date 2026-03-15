@@ -109,9 +109,18 @@ function HomeContent() {
           </section>
 
           <section className="mx-auto w-[84%] space-y-3">
-            <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+            <Link
+              href="/antes-y-despues"
+              className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
+            >
               Antes y después
-            </button>
+            </Link>
+            <Link
+              href="/tips-de-lumi"
+              className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
+            >
+              Tips de Lumi
+            </Link>
             <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
               Contacto
             </button>
@@ -170,12 +179,10 @@ function HomeContent() {
               Promos
             </span>
           </Link>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">
-              Perfil
-            </span>
-          </button>
+            <span className="text-[9px] tracking-[0.12em]">Perfil</span>
+          </Link>
         </div>
       </nav>
     </div>
