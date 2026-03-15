@@ -1,34 +1,19 @@
 "use client";
 
 import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
+
+let hasShownHomeSplash = false;
 
 function CrownLogo() {
   return (
-    <svg
+    <img
+      src="/corona%20svg.svg"
+      alt=""
       aria-hidden="true"
-      viewBox="0 0 120 72"
-      className="h-9 w-[4.5rem] text-[var(--premium-gold)]"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M18 54L27 26L45 40L60 14L75 40L93 26L102 54"
-        stroke="currentColor"
-        strokeWidth="4.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M27 54H93"
-        stroke="currentColor"
-        strokeWidth="4.5"
-        strokeLinecap="round"
-      />
-      <circle cx="27" cy="22" r="5" fill="currentColor" />
-      <circle cx="60" cy="10" r="5.5" fill="currentColor" />
-      <circle cx="93" cy="22" r="5" fill="currentColor" />
-    </svg>
+      className="h-9 w-[4.5rem] object-contain"
+    />
   );
 }
 
@@ -108,12 +93,18 @@ function HomeContent() {
               <button className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[16px] font-semibold tracking-[0.14em] text-[#1f1b16] shadow-[0_16px_36px_rgba(0,0,0,0.45)]">
                 Reservar turno
               </button>
-              <button className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+              <Link
+                href="/tratamientos"
+                className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
+              >
                 Tratamientos
-              </button>
-              <button className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+              </Link>
+              <Link
+                href="/promociones"
+                className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
+              >
                 Promociones
-              </button>
+              </Link>
             </div>
           </section>
 
@@ -161,24 +152,24 @@ function HomeContent() {
               Inicio
             </span>
           </button>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
               Tratamientos
             </span>
-          </button>
+          </Link>
           <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
               Turnos
             </span>
           </button>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <Percent className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
               Promos
             </span>
-          </button>
+          </Link>
           <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
@@ -192,10 +183,16 @@ function HomeContent() {
 }
 
 export default function Home() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(!hasShownHomeSplash);
 
   useEffect(() => {
+    if (hasShownHomeSplash) {
+      setShowSplash(false);
+      return;
+    }
+
     const timeout = setTimeout(() => {
+      hasShownHomeSplash = true;
       setShowSplash(false);
     }, 2000);
 
