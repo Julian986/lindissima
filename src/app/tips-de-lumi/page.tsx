@@ -2,7 +2,7 @@
 
 import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type LumiTip = {
   id: string;
@@ -51,23 +51,59 @@ export default function TipsDeLumiPage() {
   const [activeTip, setActiveTip] = useState(0);
   const currentTip = tips[activeTip];
 
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  const handleSwipe = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const deltaX = touchEndX.current - touchStartX.current;
+    const threshold = 40; // píxeles mínimos para considerar swipe
+
+    if (Math.abs(deltaX) < threshold) return;
+
+    if (deltaX < 0) {
+      // swipe hacia la izquierda → siguiente tip
+      setActiveTip((prev) => (prev + 1) % tips.length);
+    } else {
+      // swipe hacia la derecha → tip anterior
+      setActiveTip((prev) => (prev - 1 + tips.length) % tips.length);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#111111] text-white">
-      <main className="mx-auto w-full max-w-md px-4 pt-4 pb-24">
-        <header className="mb-3 text-center">
+      <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
+        <header className="mb-2 text-center">
           <img
             src="/corona%20svg.svg"
             alt=""
             aria-hidden="true"
-            className="mx-auto h-9 w-18 object-contain"
+            className="mx-auto mt-3 mb-[-0.75rem] h-14 w-28 object-contain"
           />
-          <h1 className="mt-1 text-[34px] leading-none font-heading text-[var(--premium-gold)]">
+          <div
+            className="mx-auto mt-6 h-[1px] w-36"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, transparent, var(--premium-gold), transparent)",
+            }}
+          />
+          <h1 className="mt-1 text-[30px] leading-none font-heading text-[var(--premium-gold)]">
             Tips de Lumi
           </h1>
         </header>
 
-        <article className="overflow-hidden rounded-[2px] border border-white/8 bg-[#141414]">
-          <div className="relative h-[330px] w-full">
+        <article
+          className="mx-[-1rem] overflow-hidden"
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0]?.clientX ?? null;
+            touchEndX.current = null;
+          }}
+          onTouchMove={(e) => {
+            touchEndX.current = e.touches[0]?.clientX ?? null;
+          }}
+          onTouchEnd={handleSwipe}
+        >
+          <div className="relative h-[360px] w-full">
             <img
               src={currentTip.imageUrl}
               alt={currentTip.titleLines.join(" ")}
@@ -75,11 +111,16 @@ export default function TipsDeLumiPage() {
               decoding="async"
               className="h-full w-full object-cover"
             />
+            {/* Degradado superior: une la imagen con el fondo negro de la app */}
+            <div className="pointer-events-none absolute right-0 top-0 left-0 h-16 bg-gradient-to-b from-[#111111] via-black/80 to-transparent" />
+            {/* Degradado general para lectura sobre la imagen */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/18 to-transparent" />
+            {/* Degradado inferior para transición suave hacia el texto / fondo, similar a Tratamientos */}
+            <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-24 bg-gradient-to-b from-transparent to-[#111111]" />
 
             <div className="absolute right-0 bottom-0 left-0 px-4 pb-4">
               <h2 className="text-[26px] leading-[1.14] font-heading text-[var(--soft-gray)]">
-                <span className="text-[var(--premium-gold)]">✦ </span>
+                <span className="mr-1 text-[var(--premium-gold)]">✦</span>
                 {currentTip.titleLines[0]}
                 <br />
                 {currentTip.titleLines[1]}
@@ -87,7 +128,7 @@ export default function TipsDeLumiPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-b from-[#141414] to-[#111111] px-4 py-4">
+          <div className="relative z-10 -mt-4 bg-gradient-to-b from-[#111111] to-[#111111] px-4 py-4">
             <p className="text-[14px] leading-[1.72] text-[var(--soft-gray)]/92">
               {currentTip.content}
             </p>

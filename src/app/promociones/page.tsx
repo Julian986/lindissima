@@ -75,7 +75,7 @@ const promos: Promo[] = [
 ];
 
 export default function PromotionsPage() {
-  const [activeCategory, setActiveCategory] = useState<PromoCategory>("Facial");
+  const [activeCategory, setActiveCategory] = useState<PromoCategory>("Láser");
 
   const filteredPromos = useMemo(
     () => promos.filter((promo) => promo.category === activeCategory),
@@ -112,7 +112,7 @@ export default function PromotionsPage() {
           {filteredPromos.map((promo) => (
             <article
               key={promo.id}
-              className="relative h-36 overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
+              className="relative h-40 overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
             >
               <img
                 src={promo.imageUrl}
@@ -129,7 +129,7 @@ export default function PromotionsPage() {
                 <p className="mt-1 text-[11px] text-[#2c2922]/80">{promo.subtitle}</p>
                 <p className="mt-1 text-[11px] leading-tight text-[#2c2922]/90">{promo.details}</p>
                 <div className="mt-auto pt-2">
-                  <button className="h-8 w-full rounded-full bg-[var(--premium-gold)] text-[13px] font-medium text-[#1f1b16]">
+                  <button className="h-8 w-full rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[13px] font-medium text-white">
                     Reservar
                   </button>
                 </div>

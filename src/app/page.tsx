@@ -73,10 +73,10 @@ function HomeContent() {
         <header className="flex justify-center">
           <div className="inline-flex flex-col items-center gap-1 text-center">
             <CrownLogo />
-            <div className="text-[24px] font-medium tracking-[0.26em] text-white font-heading">
+            <div className="text-[28px] font-medium tracking-[0.26em] text-white font-heading">
               LINDISSIMA
             </div>
-            <div className="text-[10px] tracking-[0.28em] text-[var(--soft-gray)]/90">
+            <div className="text-[11px] tracking-[0.28em] text-[var(--soft-gray)]/90">
               Láser & Treatments
             </div>
           </div>
@@ -121,9 +121,12 @@ function HomeContent() {
             >
               Tips de Lumi
             </Link>
-            <button className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]">
+            <Link
+              href="/contacto"
+              className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
+            >
               Contacto
-            </button>
+            </Link>
           </section>
 
           <section className="mx-auto w-[84%]">

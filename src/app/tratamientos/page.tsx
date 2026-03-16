@@ -232,16 +232,20 @@ export default function TreatmentsPage() {
               key={service.id}
               className="overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_8px_22px_rgba(0,0,0,0.45)]"
             >
-              <img
-                src={service.imageUrl}
-                alt={service.name}
-                loading="lazy"
-                decoding="async"
-                className="h-28 w-full object-cover"
-              />
+              <div className="relative">
+                <img
+                  src={service.imageUrl}
+                  alt={service.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-32 w-full object-cover"
+                />
+                {/* Degrade para transicion suave entre imagen y texto */}
+                <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-16 bg-gradient-to-b from-transparent to-[#1a1a1a]" />
+              </div>
 
-              <div className="px-3 pt-2 pb-3">
-                <h2 className="text-[14px] leading-tight font-heading">{service.name}</h2>
+              <div className="relative z-10 -mt-2 px-3 pt-0 pb-3">
+                <h2 className="text-[21px] leading-tight font-heading">{service.name}</h2>
                 <p className="mt-1 line-clamp-2 text-[11px] leading-tight text-[var(--soft-gray)]/80">
                   {service.description}
                 </p>
@@ -249,7 +253,7 @@ export default function TreatmentsPage() {
                   Duración: {service.duration}
                 </p>
 
-                <button className="mt-2 h-8 w-full rounded-full bg-[var(--premium-gold)] text-[13px] font-medium text-[#1f1b16]">
+                <button className="mt-2 h-8 w-full rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[14px] font-medium text-white">
                   Reservar
                 </button>
               </div>

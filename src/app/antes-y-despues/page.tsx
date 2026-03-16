@@ -114,7 +114,7 @@ const packs: PackItem[] = [
 ];
 
 export default function BeforeAfterPage() {
-  const [activeCategory, setActiveCategory] = useState<ResultCategory>("Facial");
+  const [activeCategory, setActiveCategory] = useState<ResultCategory>("Láser");
 
   const activeComparison = useMemo(
     () => comparisons.find((item) => item.category === activeCategory),
@@ -129,20 +129,14 @@ export default function BeforeAfterPage() {
   return (
     <div className="min-h-screen bg-[#111111] text-white">
       <main className="mx-auto w-full max-w-md px-4 pt-5 pb-24">
-        <header className="mb-3 flex items-center justify-between px-1">
-          <Link href="/" className="text-[var(--soft-gray)]/90" aria-label="Volver a inicio">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
-              <path d="M15 5L8 12L15 19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </Link>
+        <header className="mb-3 flex items-center justify-center px-1">
           <div className="text-center">
-            <img src="/corona%20svg.svg" alt="" aria-hidden="true" className="mx-auto h-10 w-20 object-contain" />
-            <h1 className="mt-1 text-[42px] leading-none font-heading tracking-wide">LINDISSIMA</h1>
-            <p className="mt-0.5 text-[10px] tracking-[0.18em] text-[var(--soft-gray)]/90">
+            <img src="/corona%20svg.svg" alt="" aria-hidden="true" className="mx-auto h-14 w-28 object-contain" />
+            <h1 className="mt-1 text-[32px] leading-none font-heading tracking-wide">LINDISSIMA</h1>
+            <p className="mt-0.5 text-[9px] tracking-[0.16em] text-[var(--soft-gray)]/90">
               Láser & Treatments
             </p>
           </div>
-          <span className="h-5 w-5" />
         </header>
 
         <section className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
@@ -174,7 +168,7 @@ export default function BeforeAfterPage() {
                 loading="lazy"
                 decoding="async"
               />
-              <span className="absolute bottom-2 left-2 rounded-full bg-black/45 px-3 py-1 text-[34px] leading-none text-[var(--soft-gray)] backdrop-blur-[8px] font-heading">
+              <span className="absolute bottom-2 left-2 rounded-full bg-black/45 px-3 py-1 text-[14px] leading-none text-[var(--premium-gold)] backdrop-blur-[8px] font-heading">
                 Antes
               </span>
             </article>
@@ -186,7 +180,7 @@ export default function BeforeAfterPage() {
                 loading="lazy"
                 decoding="async"
               />
-              <span className="absolute bottom-2 left-2 rounded-full bg-black/45 px-3 py-1 text-[34px] leading-none text-[var(--soft-gray)] backdrop-blur-[8px] font-heading">
+              <span className="absolute bottom-2 left-2 rounded-full bg-black/45 px-3 py-1 text-[14px] leading-none text-[var(--premium-gold)] backdrop-blur-[8px] font-heading">
                 Después
               </span>
             </article>
@@ -205,23 +199,25 @@ export default function BeforeAfterPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/90 via-[#111111]/55 to-transparent" />
 
             <div className="relative z-10 px-4 py-3">
-              <p className="text-[11px] tracking-[0.04em] text-[var(--soft-gray)]/80">{activePack.area}</p>
-              <h2 className="mt-1 text-[44px] leading-none font-heading">{activePack.title}</h2>
-              <p className="mt-1 text-[32px] leading-none font-heading text-[var(--soft-gray)]/90">
+              <p className="text-[11px] tracking-[0.04em] text-[var(--soft-gray)]/80">{activePack.area} |</p>
+              <h2 className="mt-1 text-[20px] leading-tight font-heading text-[var(--soft-gray)]">
+                {activePack.title}:
+              </h2>
+              <p className="text-[18px] leading-tight font-heading text-[var(--soft-gray)]/90">
                 {activePack.subtitle}
               </p>
 
               <div className="mt-2 flex items-end justify-between gap-3">
-                <div className="text-[10px] text-[var(--soft-gray)]/70">{activePack.discountText}</div>
+                <div className="text-[11px] italic text-[var(--soft-gray)]/70">{activePack.discountText}</div>
                 <div className="text-right">
-                  <p className="text-[20px] leading-none text-[var(--soft-gray)]/70 line-through">
+                  <p className="text-[13px] leading-none text-[var(--soft-gray)]/70 line-through">
                     {activePack.oldPrice}
                   </p>
-                  <p className="mt-1 text-[46px] leading-none font-heading">{activePack.newPrice}</p>
+                  <p className="mt-1 text-[22px] leading-none font-heading">{activePack.newPrice}</p>
                 </div>
               </div>
 
-              <button className="mt-3 h-10 w-full rounded-full bg-[var(--premium-gold)] text-[34px] leading-none font-heading text-[#1f1b16]">
+              <button className="mt-3 h-10 w-full rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[20px] leading-none font-heading text-white">
                 Comprar pack
               </button>
             </div>
