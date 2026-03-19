@@ -90,9 +90,12 @@ function HomeContent() {
               <span className="whitespace-nowrap">y cuidado profesional</span>
             </h1>
             <div className="mx-auto flex w-[84%] flex-col gap-3">
-              <button className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[16px] font-semibold tracking-[0.14em] text-[#1f1b16] shadow-[0_16px_36px_rgba(0,0,0,0.45)]">
+              <Link
+                href="/turnos"
+                className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[16px] font-semibold tracking-[0.14em] text-[#1f1b16] shadow-[0_16px_36px_rgba(0,0,0,0.45)]"
+              >
                 Reservar turno
-              </button>
+              </Link>
               <Link
                 href="/tratamientos"
                 className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
@@ -144,9 +147,12 @@ function HomeContent() {
                 Lográ una piel luminosa, uniforme y libre de impurezas.
               </p>
               <div className="mt-3 flex items-center justify-between gap-3">
-                <button className="flex h-10 items-center justify-center rounded-full bg-[var(--premium-gold)] px-5 text-[12px] font-semibold tracking-[0.14em] text-[#1f1b16]">
+                <Link
+                  href="/turnos?treatment=Limpieza%20Facial"
+                  className="flex h-10 items-center justify-center rounded-full bg-[var(--premium-gold)] px-5 text-[12px] font-semibold tracking-[0.14em] text-[#1f1b16]"
+                >
                   Reservar ahora
-                </button>
+                </Link>
                 <span className="text-[10px] tracking-[0.08em] text-[var(--soft-gray)]/75">
                   Cupos limitados
                 </span>
@@ -170,12 +176,12 @@ function HomeContent() {
               Tratamientos
             </span>
           </Link>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">
               Turnos
             </span>
-          </button>
+          </Link>
           <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <Percent className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">

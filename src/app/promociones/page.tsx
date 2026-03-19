@@ -129,9 +129,12 @@ export default function PromotionsPage() {
                 <p className="mt-1 text-[11px] text-[#2c2922]/80">{promo.subtitle}</p>
                 <p className="mt-1 text-[11px] leading-tight text-[#2c2922]/90">{promo.details}</p>
                 <div className="mt-auto pt-2">
-                  <button className="h-8 w-full rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[13px] font-medium text-white">
+                  <Link
+                    href={`/turnos?treatment=${encodeURIComponent(promo.title)}`}
+                    className="flex h-8 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[13px] font-medium text-white"
+                  >
                     Reservar
-                  </button>
+                  </Link>
                 </div>
               </div>
             </article>
@@ -153,10 +156,10 @@ export default function PromotionsPage() {
               Tratamientos
             </span>
           </Link>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">Turnos</span>
-          </button>
+          </Link>
           <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1">
             <Percent className="h-5 w-5 text-[var(--premium-gold)]" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">

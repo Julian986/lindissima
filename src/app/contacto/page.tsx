@@ -201,10 +201,10 @@ export default function ContactoPage() {
             <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">Tratamientos</span>
           </Link>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">Turnos</span>
-          </button>
+          </Link>
           <Link
             href="/promociones"
             className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80"

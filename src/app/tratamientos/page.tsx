@@ -4,7 +4,7 @@ import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-type Category = "Láser" | "Facial" | "Corporal" | "Mirada";
+type Category = "Láser" | "Facial" | "Corporal";
 
 type Service = {
   id: string;
@@ -15,49 +15,22 @@ type Service = {
   category: Category;
 };
 
-const categories: Category[] = ["Láser", "Facial", "Corporal", "Mirada"];
+const categories: Category[] = ["Láser", "Facial", "Corporal"];
 
 const services: Service[] = [
   {
-    id: "laser-cuerpo-completo",
+    id: "laser-soprano-titanium",
     name: "Depilación Láser",
-    description: "Soprano Titanium 4 ondas. Cuerpo completo.",
-    duration: "75 min",
+    description: "Soprano Titanium 4 ondas de profundidad.",
+    duration: "60 min",
     imageUrl:
       "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80",
     category: "Láser",
   },
   {
-    id: "laser-media-pierna",
-    name: "Depilación Láser",
-    description: "Media pierna + cavado. Sesión progresiva.",
-    duration: "50 min",
-    imageUrl:
-      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=900&q=80",
-    category: "Láser",
-  },
-  {
-    id: "laser-axilas",
-    name: "Depilación Láser",
-    description: "Axilas + bozo. Tratamiento rápido y efectivo.",
-    duration: "25 min",
-    imageUrl:
-      "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=900&q=80",
-    category: "Láser",
-  },
-  {
-    id: "laser-rostro",
-    name: "Depilación Láser",
-    description: "Rostro completo con control de sensibilidad.",
-    duration: "30 min",
-    imageUrl:
-      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=900&q=80",
-    category: "Láser",
-  },
-  {
     id: "facial-limpieza",
     name: "Limpieza Facial Profunda",
-    description: "Higienización + extracción + máscara calmante.",
+    description: "Higienización profunda, extracción y renovación.",
     duration: "60 min",
     imageUrl:
       "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=80",
@@ -66,7 +39,7 @@ const services: Service[] = [
   {
     id: "facial-dermapen",
     name: "Dermapen",
-    description: "Microperforación para regeneración de la piel.",
+    description: "Microestimulación para mejorar textura y luminosidad.",
     duration: "60 min",
     imageUrl:
       "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=900&q=80",
@@ -75,7 +48,7 @@ const services: Service[] = [
   {
     id: "facial-exosomas",
     name: "Exosomas",
-    description: "Reparación intensiva y mejora de textura.",
+    description: "Reparación intensiva y regeneración de la piel.",
     duration: "50 min",
     imageUrl:
       "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=900&q=80",
@@ -93,7 +66,7 @@ const services: Service[] = [
   {
     id: "facial-alta-frecuencia",
     name: "Alta Frecuencia",
-    description: "Oxigenación y acción antiseborreica para la piel.",
+    description: "Oxigenación, equilibrio y efecto antiseborreico.",
     duration: "35 min",
     imageUrl:
       "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80",
@@ -165,20 +138,11 @@ const services: Service[] = [
   {
     id: "corporal-endermologie",
     name: "Endermologie",
-    description: "Estimulación mecánica para piel más uniforme.",
+    description: "Estimulación mecánica para una piel más uniforme.",
     duration: "55 min",
     imageUrl:
       "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=900&q=80",
     category: "Corporal",
-  },
-  {
-    id: "mirada-cejas",
-    name: "Diseño de Cejas",
-    description: "Perfilado y armonización de mirada.",
-    duration: "35 min",
-    imageUrl:
-      "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80",
-    category: "Mirada",
   },
 ];
 
@@ -253,9 +217,12 @@ export default function TreatmentsPage() {
                   Duración: {service.duration}
                 </p>
 
-                <button className="mt-2 h-8 w-full rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[14px] font-medium text-white">
+                <Link
+                  href={`/turnos?treatment=${encodeURIComponent(service.name)}`}
+                  className="mt-2 flex h-8 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[14px] font-medium text-white"
+                >
                   Reservar
-                </button>
+                </Link>
               </div>
             </article>
           ))}
@@ -276,10 +243,10 @@ export default function TreatmentsPage() {
               Tratamientos
             </span>
           </Link>
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
+          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">Turnos</span>
-          </button>
+          </Link>
           <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <Percent className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em]">Promos</span>
