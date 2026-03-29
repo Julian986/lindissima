@@ -3,7 +3,7 @@
 import { CalendarDays, ChevronLeft, ChevronRight, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
@@ -211,6 +211,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   });
   const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
   const [activeTreatmentCategory, setActiveTreatmentCategory] = useState<TreatmentCategory | null>(null);
+  const bookingFocusRef = useRef<HTMLDivElement | null>(null);
 
   const selectedTreatment = useMemo(
     () => treatmentOptions.find((option) => option.id === selectedTreatmentId),
@@ -369,6 +370,12 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                   onClick={() => {
                     setSelectedDate(day.value);
                     setSelectedTime("");
+                    requestAnimationFrame(() => {
+                      bookingFocusRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                    });
                   }}
                   className={`mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-[12px] transition-colors ${
                     isSelected
@@ -387,7 +394,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           </div>
         </section>
 
-        <section className="mt-4">
+        <div ref={bookingFocusRef} className="mt-4">
+        <section>
           <div
             className={`flex items-center justify-between rounded-2xl border bg-[#171717] px-4 py-3 transition-all ${
               activeStep === 3
@@ -458,6 +466,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           >
             Confirmar
           </button>
+        </div>
         </div>
       </main>
 
