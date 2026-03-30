@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Dumbbell,
   Hand,
+  MessageCircle,
   Plus,
   ScanFace,
   Sparkles,
@@ -112,6 +113,32 @@ function durationLabel(category: string) {
   return "Turno";
 }
 
+function digitsOnlyPhone(s: string) {
+  return s.replace(/\D/g, "");
+}
+
+/** Dígitos internacionales para wa.me (Argentina centrado, sin +). */
+function whatsAppDigitsFromStoredPhone(raw: string): string | null {
+  const d = digitsOnlyPhone(raw);
+  if (d.length < 10 || d.length > 15) return null;
+  if (d.startsWith("54")) return d;
+  if (d.length === 11 && d.startsWith("9")) return `54${d}`;
+  if (d.length === 10) return `549${d}`;
+  return `54${d}`;
+}
+
+function whatsAppChatUrl(
+  phoneRaw: string,
+  opts: { customerName: string; displayDate: string; timeLocal: string; treatmentName: string },
+): string | null {
+  const n = whatsAppDigitsFromStoredPhone(phoneRaw);
+  if (!n) return null;
+  const name = opts.customerName.trim();
+  const greet = name ? `Hola ${name}` : "Hola";
+  const text = `${greet}, te escribimos desde Lindissima por tu turno: ${opts.treatmentName}, ${opts.displayDate} a las ${opts.timeLocal}.`;
+  return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
+}
+
 function ServiceIcon({ category }: { category: string }) {
   const cls = "h-5 w-5 shrink-0 text-[var(--premium-gold)]";
   if (category === "Láser") return <Sparkles className={cls} strokeWidth={1.85} />;
@@ -123,20 +150,20 @@ function ServiceIcon({ category }: { category: string }) {
 function StatusBadge({ reservationStatus, paymentStatus }: { reservationStatus: string; paymentStatus: string }) {
   if (reservationStatus === "cancelled") {
     return (
-      <span className="mt-2 inline-block rounded-full bg-red-500/12 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-red-300/95">
+      <span className="inline-block rounded-full bg-red-500/12 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-red-300/95">
         Cancelada
       </span>
     );
   }
   if (reservationStatus === "pending_payment" || paymentStatus === "pending") {
     return (
-      <span className="mt-2 inline-block rounded-full bg-amber-500/14 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-amber-300/90">
+      <span className="inline-block rounded-full bg-amber-500/14 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-amber-300/90">
         Pendiente
       </span>
     );
   }
   return (
-    <span className="mt-2 inline-block rounded-full bg-emerald-500/14 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300/95">
+    <span className="inline-block rounded-full bg-emerald-500/14 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300/95">
       Confirmada
     </span>
   );
@@ -348,7 +375,14 @@ export function PanelTurnosDashboard() {
           ) : dayReservations.length === 0 ? (
             <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">No hay turnos este día.</p>
           ) : (
-            dayReservations.map((r) => (
+            dayReservations.map((r) => {
+              const waUrl = whatsAppChatUrl(r.customerPhone, {
+                customerName: r.customerName,
+                displayDate: r.displayDate,
+                timeLocal: r.timeLocal,
+                treatmentName: r.treatmentName,
+              });
+              return (
               <article
                 key={r.id}
                 className="rounded-[20px] border border-white/8 bg-[#171717] px-4 py-4 shadow-[0_10px_32px_rgba(0,0,0,0.32)]"
@@ -361,19 +395,33 @@ export function PanelTurnosDashboard() {
                   <div className="min-w-0 flex-1">
                     <div className="flex gap-2">
                       <ServiceIcon category={r.category} />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-[15px] font-bold leading-snug text-[var(--soft-gray)]">{r.treatmentName}</p>
                         <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-[var(--soft-gray)]/58">
                           <User className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
                           <span className="truncate">{r.customerName || "Cliente"}</span>
                         </p>
-                        <StatusBadge reservationStatus={r.reservationStatus} paymentStatus={r.paymentStatus} />
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <StatusBadge reservationStatus={r.reservationStatus} paymentStatus={r.paymentStatus} />
+                          {waUrl ? (
+                            <a
+                              href={waUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366]/16 px-3 py-1.5 text-[11px] font-semibold text-[#6ee7a5] ring-1 ring-[#25D366]/35 transition hover:bg-[#25D366]/24"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" strokeWidth={2} />
+                              WhatsApp
+                            </a>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </article>
-            ))
+            );
+            })
           )}
         </div>
 
