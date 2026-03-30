@@ -1,4 +1,4 @@
-import { CalendarDays, CalendarPlus2, CreditCard, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
+import { CalendarDays, CalendarPlus2, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 
 function CrownLogo() {
@@ -18,6 +18,9 @@ type ConfirmPageProps = {
     subtitle?: string;
     date?: string;
     time?: string;
+    name?: string;
+    phone?: string;
+    id?: string;
   }>;
 };
 
@@ -27,6 +30,9 @@ export default async function TurnoConfirmadoPage({ searchParams }: ConfirmPageP
   const subtitle = params.subtitle ?? "Sesión premium";
   const date = params.date ?? "Jueves, 26 abr";
   const time = params.time ?? "15:00";
+  const clientName = params.name ?? "";
+  const clientPhone = params.phone ?? "";
+  const reservationId = params.id ?? "";
 
   return (
     <div className="min-h-screen bg-[#111111] text-white">
@@ -42,6 +48,11 @@ export default async function TurnoConfirmadoPage({ searchParams }: ConfirmPageP
           <p className="mt-3 text-[16px] leading-relaxed text-[var(--soft-gray)]/88">
             Tu turno ha sido agendado con éxito.
           </p>
+          {reservationId ? (
+            <p className="mt-2 text-[11px] tracking-[0.06em] text-[var(--soft-gray)]/55">
+              Referencia: <span className="font-mono text-[var(--soft-gray)]/75">{reservationId}</span>
+            </p>
+          ) : null}
 
           <div className="mt-6 rounded-2xl border border-white/8 bg-black/20 p-4">
             <div className="flex items-start justify-between gap-3">
@@ -53,6 +64,14 @@ export default async function TurnoConfirmadoPage({ searchParams }: ConfirmPageP
                 <p className="mt-1 text-[13px] tracking-[0.08em] text-[var(--soft-gray)]/58 uppercase">
                   {subtitle}
                 </p>
+                {(clientName || clientPhone) && (
+                  <div className="mt-4 rounded-xl border border-white/8 bg-black/30 px-3 py-3 text-[13px] text-[var(--soft-gray)]/82">
+                    {clientName ? <p className="font-medium text-[var(--soft-gray)]">{clientName}</p> : null}
+                    {clientPhone ? (
+                      <p className="mt-1 text-[var(--soft-gray)]/70">WhatsApp: {clientPhone}</p>
+                    ) : null}
+                  </div>
+                )}
               </div>
               <div className="rounded-xl border border-white/8 bg-black/25 p-2">
                 <CalendarDays className="h-6 w-6 text-[var(--premium-gold)]" strokeWidth={1.7} />
@@ -81,14 +100,7 @@ export default async function TurnoConfirmadoPage({ searchParams }: ConfirmPageP
           </button>
 
           <div className="mt-5 grid grid-cols-1 gap-2">
-            <button
-              type="button"
-              className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/8 bg-black/18 text-[14px] text-[var(--soft-gray)]"
-            >
-              <CreditCard className="h-4 w-4" strokeWidth={1.8} />
-              Pagar seña
-            </button>
-            <button
+<button
               type="button"
               className="flex h-12 items-center justify-center rounded-2xl border border-white/8 bg-black/18 text-[14px] text-[var(--soft-gray)]"
             >

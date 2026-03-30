@@ -1,9 +1,18 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, ChevronRight, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Home as HomeIcon,
+  Percent,
+  Sparkles,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
@@ -192,6 +201,11 @@ function formatDisplayDate(value: string) {
   return `${weekdayLabels[date.getDay()]}, ${day} ${monthNames[month - 1].slice(0, 3).toLowerCase()}`;
 }
 
+function isLikelyWhatsappNumber(raw: string): boolean {
+  const digits = raw.replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 15;
+}
+
 type TurnosClientProps = {
   initialTreatment?: string;
 };
@@ -211,7 +225,18 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   });
   const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
   const [activeTreatmentCategory, setActiveTreatmentCategory] = useState<TreatmentCategory | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
+  const [depositPaid, setDepositPaid] = useState(false);
+  const [treatmentFirstHintVisible, setTreatmentFirstHintVisible] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const bookingFocusRef = useRef<HTMLDivElement | null>(null);
+  const dataSectionRef = useRef<HTMLDivElement | null>(null);
+  const paymentSectionRef = useRef<HTMLElement | null>(null);
+  const scrollPaymentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevDatosCompleteRef = useRef(false);
 
   const selectedTreatment = useMemo(
     () => treatmentOptions.find((option) => option.id === selectedTreatmentId),
@@ -231,19 +256,122 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const visibleMonthLabel = `${monthNames[visibleMonthDate.getMonth()]} ${visibleMonthDate.getFullYear()}`;
 
   const availableTimes = selectedDate ? getAvailableTimesForDate(selectedDate) : [];
-  const canConfirm = Boolean(selectedTreatment && selectedDate && selectedTime);
-  const activeStep = !selectedTreatment ? 1 : !selectedDate ? 2 : !selectedTime ? 3 : 4;
+  const hasSlot = Boolean(selectedTreatment && selectedDate && selectedTime);
+  const datosComplete = Boolean(
+    customerName.trim().length >= 2 &&
+      isLikelyWhatsappNumber(customerPhone) &&
+      whatsappOptIn,
+  );
+  const showWhatsappInvalidHint =
+    customerPhone.trim().length >= 8 && !isLikelyWhatsappNumber(customerPhone);
+  const canConfirm = hasSlot && datosComplete && depositPaid;
 
-  const handleConfirm = () => {
-    if (!selectedTreatment || !selectedDate || !selectedTime) return;
-    const params = new URLSearchParams({
-      treatment: selectedTreatment.name,
-      subtitle: selectedTreatment.subtitle,
-      date: formatDisplayDate(selectedDate),
-      time: selectedTime,
+  const activeStep = !selectedTreatment
+    ? 1
+    : !selectedDate
+      ? 2
+      : !selectedTime
+        ? 3
+        : !datosComplete
+          ? 4
+          : !depositPaid
+            ? 5
+            : 6;
+
+  useEffect(() => {
+    setDepositPaid(false);
+  }, [selectedTreatmentId, selectedDate, selectedTime]);
+
+  useEffect(() => {
+    if (selectedTreatment) setTreatmentFirstHintVisible(false);
+  }, [selectedTreatment]);
+
+  useEffect(() => {
+    if (!treatmentFirstHintVisible) return;
+    const t = window.setTimeout(() => setTreatmentFirstHintVisible(false), 4500);
+    return () => clearTimeout(t);
+  }, [treatmentFirstHintVisible]);
+
+  useEffect(() => {
+    prevDatosCompleteRef.current = false;
+  }, [selectedTreatmentId, selectedDate, selectedTime]);
+
+  const scheduleScrollToPaymentSection = useCallback(() => {
+    if (!hasSlot || depositPaid) return;
+    if (scrollPaymentTimeoutRef.current) clearTimeout(scrollPaymentTimeoutRef.current);
+    scrollPaymentTimeoutRef.current = setTimeout(() => {
+      scrollPaymentTimeoutRef.current = null;
+      paymentSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 180);
+  }, [hasSlot, depositPaid]);
+
+  useEffect(() => {
+    return () => {
+      if (scrollPaymentTimeoutRef.current) clearTimeout(scrollPaymentTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasSlot || depositPaid) {
+      prevDatosCompleteRef.current = datosComplete;
+      return;
+    }
+    const becameComplete = datosComplete && !prevDatosCompleteRef.current;
+    prevDatosCompleteRef.current = datosComplete;
+    if (becameComplete) scheduleScrollToPaymentSection();
+  }, [datosComplete, hasSlot, depositPaid, scheduleScrollToPaymentSection]);
+
+  useEffect(() => {
+    if (!hasSlot) return;
+    const id = requestAnimationFrame(() => {
+      dataSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+    return () => cancelAnimationFrame(id);
+  }, [hasSlot, selectedTime]);
 
-    router.push(`/turnos/confirmado?${params.toString()}`);
+  const handleConfirm = async () => {
+    if (!selectedTreatment || !selectedDate || !selectedTime || !datosComplete || !depositPaid) {
+      return;
+    }
+    setConfirmError(null);
+    setConfirmLoading(true);
+    try {
+      const res = await fetch("/api/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          treatmentId: selectedTreatment.id,
+          treatmentName: selectedTreatment.name,
+          subtitle: selectedTreatment.subtitle,
+          category: selectedTreatment.category,
+          dateKey: selectedDate,
+          timeLocal: selectedTime,
+          displayDate: formatDisplayDate(selectedDate),
+          customerName: customerName.trim(),
+          customerPhone: customerPhone.trim(),
+          whatsappOptIn,
+        }),
+      });
+      const data = (await res.json()) as { error?: string; id?: string };
+      if (!res.ok) {
+        setConfirmError(data.error ?? "No se pudo confirmar el turno.");
+        return;
+      }
+      const params = new URLSearchParams({
+        treatment: selectedTreatment.name,
+        subtitle: selectedTreatment.subtitle,
+        date: formatDisplayDate(selectedDate),
+        time: selectedTime,
+        name: customerName.trim(),
+        phone: customerPhone.trim(),
+      });
+      if (data.id) params.set("id", data.id);
+      router.push(`/turnos/confirmado?${params.toString()}`);
+    } catch {
+      setConfirmError("Sin conexión o error de red. Probá de nuevo.");
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   const openTreatmentModal = () => {
@@ -352,6 +480,17 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
             </button>
           </div>
 
+          {treatmentFirstHintVisible ? (
+            <p
+              role="status"
+              aria-live="polite"
+              className="mb-2 rounded-xl border border-[#8a7548]/55 bg-[#fff9ec]/97 px-3 py-2.5 text-center text-[12px] leading-snug text-[#2c241b] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
+            >
+              <span className="font-semibold">Primero elegí un tratamiento</span>
+              <span className="text-[#3b3224]"> (paso 1) para poder elegir el día.</span>
+            </p>
+          ) : null}
+
           <div className="grid grid-cols-7 gap-y-2 text-center">
             {weekdayLabels.map((label) => (
               <div key={label} className="text-[10px] tracking-[0.08em] text-[#7f7364]">
@@ -368,6 +507,10 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                   type="button"
                   disabled={isDisabled}
                   onClick={() => {
+                    if (!selectedTreatment) {
+                      setTreatmentFirstHintVisible(true);
+                      return;
+                    }
                     setSelectedDate(day.value);
                     setSelectedTime("");
                     requestAnimationFrame(() => {
@@ -445,26 +588,178 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           </div>
         </section>
 
+        {hasSlot && (
+          <div ref={dataSectionRef} className="mt-6 space-y-5">
+            <section
+              className={`rounded-2xl border bg-[#171717] px-4 py-4 transition-all ${
+                activeStep === 4
+                  ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(201,169,106,0.2),0_0_22px_rgba(201,169,106,0.16)]"
+                  : "border-white/8"
+              }`}
+            >
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 4</p>
+                  <p className="mt-1 text-[18px] font-heading text-[var(--soft-gray)]">Tus datos</p>
+                  <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
+                    Completá tu nombre y WhatsApp para recordatorios.
+                  </p>
+                  {activeStep === 4 && (
+                    <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
+                      <span>Necesitamos estos datos antes del pago</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="customerName" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
+                    Nombre y apellido
+                  </label>
+                  <input
+                    id="customerName"
+                    name="customerName"
+                    autoComplete="name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Como figura en tu DNI o preferís que te llamemos"
+                    className="mt-1.5 w-full rounded-xl border border-white/10 bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="customerPhone" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
+                    WhatsApp
+                  </label>
+                  <input
+                    id="customerPhone"
+                    name="customerPhone"
+                    type="tel"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    onBlur={() => {
+                      const nameOk = customerName.trim().length >= 2;
+                      const phoneOk = isLikelyWhatsappNumber(customerPhone);
+                      if (hasSlot && nameOk && phoneOk && whatsappOptIn) {
+                        scheduleScrollToPaymentSection();
+                      }
+                    }}
+                    placeholder="Ej: +54 9 11 2345-6789"
+                    aria-invalid={showWhatsappInvalidHint}
+                    className={`mt-1.5 w-full rounded-xl border bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55 ${
+                      showWhatsappInvalidHint
+                        ? "border-amber-500/45"
+                        : "border-white/10"
+                    }`}
+                  />
+                  <p className="mt-1 text-[11px] text-[var(--soft-gray)]/45">
+                    Mismo número que usás en WhatsApp.
+                  </p>
+                  {showWhatsappInvalidHint ? (
+                    <p className="mt-1 text-[11px] leading-snug text-amber-200/90">
+                      Revisá el número: tiene que tener entre 10 y 15 dígitos en total (podés usar +54,
+                      espacios o guiones).
+                    </p>
+                  ) : null}
+                </div>
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={whatsappOptIn}
+                    onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 accent-[var(--premium-gold)]"
+                  />
+                  <span className="text-[12px] leading-snug text-[var(--soft-gray)]/78">
+                    Acepto recibir recordatorios y avisos de mi turno por WhatsApp.
+                  </span>
+                </label>
+              </div>
+            </section>
+
+            <section
+              ref={paymentSectionRef}
+              className={`rounded-2xl border bg-[#171717] px-4 py-4 transition-all ${
+                activeStep === 5
+                  ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(201,169,106,0.2),0_0_22px_rgba(201,169,106,0.16)]"
+                  : "border-white/8"
+              }`}
+            >
+              <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 5</p>
+              <p className="mt-1 text-[18px] font-heading text-[var(--soft-gray)]">Seña con Mercado Pago</p>
+              <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
+                Reservá el horario abonando la seña. Monto y política la define la clínica.
+              </p>
+              {activeStep === 5 && datosComplete && (
+                <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
+                  <span>Pagá la seña para habilitar la confirmación</span>
+                </div>
+              )}
+              <div className="mt-4">
+                {depositPaid ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-3 py-3 text-[14px] text-emerald-200/95">
+                    <Check className="h-5 w-5 shrink-0" strokeWidth={2} />
+                    <span>Seña abonada (simulado). Ya podés confirmar.</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!datosComplete}
+                    onClick={() => setDepositPaid(true)}
+                    className={`flex h-[52px] w-full items-center justify-center gap-2.5 rounded-xl text-[16px] font-semibold transition-all ${
+                      datosComplete
+                        ? "bg-[#009EE3] text-white shadow-[0_8px_24px_rgba(0,158,227,0.35)]"
+                        : "cursor-not-allowed bg-[#2a2a2a] text-white/40"
+                    }`}
+                  >
+                    <img
+                      src="/Mercado_Pago_idp_LvMgpe_1.svg"
+                      alt=""
+                      className={`h-8 w-auto shrink-0 object-contain sm:h-9 ${
+                        datosComplete ? "opacity-100" : "opacity-45"
+                      }`}
+                      width={39}
+                      height={28}
+                      decoding="async"
+                    />
+                    <span className="text-[13px] font-medium opacity-95">Pagar seña</span>
+                  </button>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+
         <div className="mt-5">
-          {activeStep === 4 && (
+          {activeStep === 6 && (
             <div className="mb-2 flex items-center justify-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
-              <span>Ya podés confirmar tu turno</span>
+              <span>Todo listo: confirmá para finalizar</span>
             </div>
           )}
+          {confirmError ? (
+            <p
+              role="alert"
+              className="mb-2 rounded-xl border border-red-500/35 bg-red-950/35 px-3 py-2.5 text-center text-[12px] leading-snug text-red-200/95"
+            >
+              {confirmError}
+            </p>
+          ) : null}
           <button
             type="button"
-            onClick={handleConfirm}
-            disabled={!canConfirm}
+            onClick={() => void handleConfirm()}
+            disabled={!canConfirm || confirmLoading}
             className={`h-[52px] w-full rounded-full border text-[18px] font-heading transition-all ${
-              canConfirm
-                ? activeStep === 4
+              canConfirm && !confirmLoading
+                ? activeStep === 6
                   ? "border-[#e2cb9a] bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-white shadow-[0_0_0_1px_rgba(226,203,154,0.2),0_0_24px_rgba(201,169,106,0.22)]"
                   : "border-transparent bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-white"
                 : "border-transparent bg-[#3a3328] text-white/45"
-            }`}
+            } ${confirmLoading ? "cursor-wait" : ""}`}
           >
-            Confirmar
+            {confirmLoading ? "Guardando…" : "Confirmar"}
           </button>
         </div>
         </div>
@@ -588,3 +883,4 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     </div>
   );
 }
+
