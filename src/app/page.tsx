@@ -122,7 +122,7 @@ function HomeContent() {
               href="/tips-de-lumi"
               className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
             >
-              Tips de Lumi
+              Tips de Lindissima
             </Link>
             <Link
               href="/contacto"

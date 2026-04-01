@@ -88,7 +88,7 @@ export default function TipsDeLumiPage() {
             }}
           />
           <h1 className="mt-1 text-[30px] leading-none font-heading text-[var(--premium-gold)]">
-            Tips de Lumi
+            Tips de Lindissima
           </h1>
         </header>
 

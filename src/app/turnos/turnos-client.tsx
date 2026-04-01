@@ -129,6 +129,22 @@ const availableTimesByWeekday: Record<number, string[]> = {
   6: ["08:00", "09:00", "10:00", "11:00", "12:00"],
 };
 
+/**
+ * Excepciones manuales de disponibilidad (prioridad sobre la plantilla semanal).
+ * Fuente: agenda enviada por la clienta para cierre de marzo / abril 2026.
+ */
+const availableTimesByDateOverride: Record<string, string[]> = {
+  "2026-03-30": ["09:00", "16:30", "18:15"],
+  "2026-03-31": ["10:00", "17:00", "18:00"],
+  "2026-04-01": ["08:00", "10:00", "11:00", "12:00", "17:00"],
+  "2026-04-04": ["09:00", "10:00", "11:00", "12:00"],
+  "2026-04-07": ["10:00", "11:00", "15:00", "16:00", "17:30", "18:30"],
+  "2026-04-08": ["08:00", "09:00", "10:00", "10:30", "15:00", "16:00"],
+  "2026-04-09": ["08:00", "09:00", "10:00"],
+  "2026-04-10": ["11:00", "15:00", "16:00", "17:30", "18:30"],
+  "2026-04-11": ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00"],
+};
+
 const weekdayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const monthNames = [
   "Enero",
@@ -167,6 +183,11 @@ function getAvailableTimesForDate(value: string) {
 
   if (startOfDay(date) < today) {
     return [];
+  }
+
+  const override = availableTimesByDateOverride[value];
+  if (override) {
+    return override;
   }
 
   return availableTimesByWeekday[date.getDay()] ?? [];
