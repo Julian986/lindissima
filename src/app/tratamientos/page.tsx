@@ -4,6 +4,8 @@ import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { LaserPromoEnganche } from "@/components/laser-promo-enganche";
+
 type Category = "Láser" | "Facial" | "Corporal";
 
 type Service = {
@@ -161,7 +163,7 @@ export default function TreatmentsPage() {
           <h1 className="text-[34px] leading-none font-heading">Tratamientos</h1>
         </header>
 
-        <section className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+        <section className="mb-2 flex items-center gap-2 overflow-x-auto pb-1">
           {categories.map((category) => {
             const isActive = category === activeCategory;
 
@@ -181,14 +183,16 @@ export default function TreatmentsPage() {
           })}
         </section>
 
-        <div className="mb-4">
+        <div className="mb-2">
           <Link
             href="/antes-y-despues"
-            className="flex h-10 w-full items-center justify-center rounded-full border border-white/8 bg-black/45 text-[13px] font-medium text-[var(--soft-gray)]"
+            className="flex h-10 w-full items-center justify-center rounded-full border border-[var(--premium-gold)]/30 bg-black/40 text-[13px] font-medium text-[var(--soft-gray)] shadow-[inset_0_1px_0_rgba(201,169,106,0.14)] transition-colors hover:border-[var(--premium-gold)]/48 hover:bg-[var(--premium-gold)]/[0.07] hover:text-[var(--premium-gold)]"
           >
             Ver antes y después
           </Link>
         </div>
+
+        {activeCategory === "Láser" ? <LaserPromoEnganche /> : null}
 
         <section className="grid grid-cols-2 gap-3">
           {filteredServices.map((service) => (

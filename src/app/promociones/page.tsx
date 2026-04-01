@@ -4,6 +4,8 @@ import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { LaserPromoEnganche } from "@/components/laser-promo-enganche";
+
 type PromoCategory = "Láser" | "Facial" | "Cejas" | "Corporal";
 
 type Promo = {
@@ -107,6 +109,8 @@ export default function PromotionsPage() {
             );
           })}
         </section>
+
+        {activeCategory === "Láser" ? <LaserPromoEnganche /> : null}
 
         <section className="space-y-3">
           {filteredPromos.map((promo) => (
