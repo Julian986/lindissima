@@ -8,8 +8,10 @@ export type ReservationStatus =
   | "completed"
   | "no_show";
 
-/** Estado del cobro de seña (Mercado Pago u otro) */
+/** Estado del cobro de seña / total (Mercado Pago) */
 export type PaymentStatus = "not_required" | "pending" | "simulated_paid" | "approved" | "failed" | "refunded";
+
+export type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
 export type ReservationDoc = {
   _id: ObjectId;
@@ -17,13 +19,9 @@ export type ReservationDoc = {
   treatmentName: string;
   subtitle: string;
   category: TreatmentCategory;
-  /** YYYY-MM-DD en calendario de la clínica */
   dateKey: string;
-  /** HH:mm en horario local AR */
   timeLocal: string;
-  /** Texto legible enviado por el cliente (ej. "Domingo, 30 mar") */
   displayDate: string;
-  /** Inicio del turno en UTC derivado de dateKey + timeLocal (Argentina) */
   startsAt: Date;
   customerName: string;
   customerPhone: string;
@@ -33,9 +31,19 @@ export type ReservationDoc = {
   source: "app_turnos";
   createdAt: Date;
   updatedAt: Date;
+  /** Secreto de un solo uso para crear la preferencia Checkout Pro (no es password del usuario). */
+  checkoutToken?: string;
+  /** Igual a _id hex; también enviado a MP como external_reference. */
+  externalReference?: string;
+  preferenceId?: string | null;
+  /** Último payment id de MP asociado (aprobado). */
+  mpPaymentId?: string | null;
+  /** Último status devuelto por la API de pagos (approved, pending, rejected, etc.). */
+  mpPaymentStatusLast?: string | null;
+  mpPaymentApprovedAt?: Date | null;
+  paymentDeadlineAt?: Date | null;
+  cancelReason?: string | null;
 };
-
-export type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
 export type CreateReservationInput = {
   treatmentId: string;
@@ -48,4 +56,19 @@ export type CreateReservationInput = {
   customerName: string;
   customerPhone: string;
   whatsappOptIn: boolean;
+};
+
+/** Auditoría de notificaciones Mercado Pago (webhook / IPN). */
+export type MpWebhookEventDoc = {
+  _id?: ObjectId;
+  receivedAt: Date;
+  method: string;
+  topic: string | null;
+  resourceId: string | null;
+  querySnapshot: Record<string, string>;
+  bodySnapshot: unknown;
+  processingOutcome: "processed" | "ignored" | "error";
+  detail?: string;
+  reservationHexId?: string | null;
+  mpPaymentId?: string | null;
 };

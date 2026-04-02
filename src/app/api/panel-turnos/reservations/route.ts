@@ -18,6 +18,22 @@ function serialize(r: ReservationDoc) {
     customerPhone: r.customerPhone,
     reservationStatus: r.reservationStatus,
     paymentStatus: r.paymentStatus,
+    externalReference: r.externalReference ?? null,
+    preferenceId: r.preferenceId ?? null,
+    mpPaymentId: r.mpPaymentId ?? null,
+    mpPaymentStatusLast: r.mpPaymentStatusLast ?? null,
+    mpPaymentApprovedAt:
+      r.mpPaymentApprovedAt instanceof Date
+        ? r.mpPaymentApprovedAt.toISOString()
+        : r.mpPaymentApprovedAt
+          ? String(r.mpPaymentApprovedAt)
+          : null,
+    paymentDeadlineAt:
+      r.paymentDeadlineAt instanceof Date
+        ? r.paymentDeadlineAt.toISOString()
+        : r.paymentDeadlineAt
+          ? String(r.paymentDeadlineAt)
+          : null,
     startsAt: r.startsAt instanceof Date ? r.startsAt.toISOString() : String(r.startsAt),
     createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
   };

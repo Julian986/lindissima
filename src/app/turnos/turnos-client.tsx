@@ -2,7 +2,6 @@
 
 import {
   CalendarDays,
-  Check,
   ChevronLeft,
   ChevronRight,
   Home as HomeIcon,
@@ -11,7 +10,6 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type TreatmentCategory = "Láser" | "Facial" | "Corporal";
@@ -232,7 +230,6 @@ type TurnosClientProps = {
 };
 
 export default function TurnosClient({ initialTreatment = "" }: TurnosClientProps) {
-  const router = useRouter();
   const initialMatch = treatmentOptions.find(
     (option) => option.id === initialTreatment || option.name === initialTreatment,
   );
@@ -249,9 +246,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
-  const [depositPaid, setDepositPaid] = useState(false);
   const [treatmentFirstHintVisible, setTreatmentFirstHintVisible] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const bookingFocusRef = useRef<HTMLDivElement | null>(null);
   const dataSectionRef = useRef<HTMLDivElement | null>(null);
@@ -285,8 +281,6 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   );
   const showWhatsappInvalidHint =
     customerPhone.trim().length >= 8 && !isLikelyWhatsappNumber(customerPhone);
-  const canConfirm = hasSlot && datosComplete && depositPaid;
-
   const activeStep = !selectedTreatment
     ? 1
     : !selectedDate
@@ -295,13 +289,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         ? 3
         : !datosComplete
           ? 4
-          : !depositPaid
-            ? 5
-            : 6;
-
-  useEffect(() => {
-    setDepositPaid(false);
-  }, [selectedTreatmentId, selectedDate, selectedTime]);
+          : 5;
 
   useEffect(() => {
     if (selectedTreatment) setTreatmentFirstHintVisible(false);
@@ -318,13 +306,13 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   }, [selectedTreatmentId, selectedDate, selectedTime]);
 
   const scheduleScrollToPaymentSection = useCallback(() => {
-    if (!hasSlot || depositPaid) return;
+    if (!hasSlot) return;
     if (scrollPaymentTimeoutRef.current) clearTimeout(scrollPaymentTimeoutRef.current);
     scrollPaymentTimeoutRef.current = setTimeout(() => {
       scrollPaymentTimeoutRef.current = null;
       paymentSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 180);
-  }, [hasSlot, depositPaid]);
+  }, [hasSlot]);
 
   useEffect(() => {
     return () => {
@@ -333,14 +321,14 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   }, []);
 
   useEffect(() => {
-    if (!hasSlot || depositPaid) {
+    if (!hasSlot) {
       prevDatosCompleteRef.current = datosComplete;
       return;
     }
     const becameComplete = datosComplete && !prevDatosCompleteRef.current;
     prevDatosCompleteRef.current = datosComplete;
     if (becameComplete) scheduleScrollToPaymentSection();
-  }, [datosComplete, hasSlot, depositPaid, scheduleScrollToPaymentSection]);
+  }, [datosComplete, hasSlot, scheduleScrollToPaymentSection]);
 
   useEffect(() => {
     if (!hasSlot) return;
@@ -350,48 +338,77 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     return () => cancelAnimationFrame(id);
   }, [hasSlot, selectedTime]);
 
-  const handleConfirm = async () => {
-    if (!selectedTreatment || !selectedDate || !selectedTime || !datosComplete || !depositPaid) {
+  const handleMercadoPagoCheckout = async () => {
+    if (!selectedTreatment || !selectedDate || !selectedTime || !datosComplete) {
       return;
     }
     setConfirmError(null);
-    setConfirmLoading(true);
+    setCheckoutLoading(true);
     try {
-      const res = await fetch("/api/reservations", {
+      const pendingBody = {
+        treatmentId: selectedTreatment.id,
+        treatmentName: selectedTreatment.name,
+        subtitle: selectedTreatment.subtitle,
+        category: selectedTreatment.category,
+        dateKey: selectedDate,
+        timeLocal: selectedTime,
+        displayDate: formatDisplayDate(selectedDate),
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        whatsappOptIn,
+      };
+      const resPending = await fetch("/api/reservations/pending", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pendingBody),
+      });
+      const dataPending = (await resPending.json()) as {
+        error?: string;
+        id?: string;
+        checkoutToken?: string;
+      };
+      if (!resPending.ok) {
+        setConfirmError(dataPending.error ?? "No se pudo reservar el turno.");
+        return;
+      }
+      if (!dataPending.id || !dataPending.checkoutToken) {
+        setConfirmError("Respuesta inválida del servidor.");
+        return;
+      }
+
+      const resPref = await fetch("/api/mercadopago/preferences", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          treatmentId: selectedTreatment.id,
-          treatmentName: selectedTreatment.name,
-          subtitle: selectedTreatment.subtitle,
-          category: selectedTreatment.category,
-          dateKey: selectedDate,
-          timeLocal: selectedTime,
-          displayDate: formatDisplayDate(selectedDate),
-          customerName: customerName.trim(),
-          customerPhone: customerPhone.trim(),
-          whatsappOptIn,
+          reservationId: dataPending.id,
+          checkoutToken: dataPending.checkoutToken,
         }),
       });
-      const data = (await res.json()) as { error?: string; id?: string };
-      if (!res.ok) {
-        setConfirmError(data.error ?? "No se pudo confirmar el turno.");
+      const dataPref = (await resPref.json()) as { error?: string; initPoint?: string };
+      if (!resPref.ok) {
+        setConfirmError(dataPref.error ?? "No se pudo iniciar Mercado Pago.");
         return;
       }
-      const params = new URLSearchParams({
+      if (!dataPref.initPoint) {
+        setConfirmError("Mercado Pago no devolvió el enlace de pago.");
+        return;
+      }
+
+      const snapshot = {
         treatment: selectedTreatment.name,
         subtitle: selectedTreatment.subtitle,
         date: formatDisplayDate(selectedDate),
         time: selectedTime,
         name: customerName.trim(),
         phone: customerPhone.trim(),
-      });
-      if (data.id) params.set("id", data.id);
-      router.push(`/turnos/confirmado?${params.toString()}`);
+        id: dataPending.id,
+      };
+      sessionStorage.setItem("mp_turno_snapshot", JSON.stringify(snapshot));
+      window.location.href = dataPref.initPoint;
     } catch {
       setConfirmError("Sin conexión o error de red. Probá de nuevo.");
     } finally {
-      setConfirmLoading(false);
+      setCheckoutLoading(false);
     }
   };
 
@@ -715,74 +732,50 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
               {activeStep === 5 && datosComplete && (
                 <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
-                  <span>Pagá la seña para habilitar la confirmación</span>
+                  <span>Pagá la seña: te llevamos a Mercado Pago</span>
                 </div>
               )}
+              <p className="mt-3 text-[11px] leading-snug text-[var(--soft-gray)]/50">
+                El turno se confirma cuando Mercado Pago acredita el pago (no al volver del navegador).
+              </p>
               <div className="mt-4">
-                {depositPaid ? (
-                  <div className="flex items-center gap-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-3 py-3 text-[14px] text-emerald-200/95">
-                    <Check className="h-5 w-5 shrink-0" strokeWidth={2} />
-                    <span>Seña abonada (simulado). Ya podés confirmar.</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={!datosComplete}
-                    onClick={() => setDepositPaid(true)}
-                    className={`flex h-[52px] w-full items-center justify-center gap-2.5 rounded-xl text-[16px] font-semibold transition-all ${
-                      datosComplete
-                        ? "bg-[#009EE3] text-white shadow-[0_8px_24px_rgba(0,158,227,0.35)]"
-                        : "cursor-not-allowed bg-[#2a2a2a] text-white/40"
+                <button
+                  type="button"
+                  disabled={!datosComplete || checkoutLoading}
+                  onClick={() => void handleMercadoPagoCheckout()}
+                  className={`flex h-[52px] w-full items-center justify-center gap-2.5 rounded-xl text-[16px] font-semibold transition-all ${
+                    datosComplete && !checkoutLoading
+                      ? "bg-[#009EE3] text-white shadow-[0_8px_24px_rgba(0,158,227,0.35)]"
+                      : "cursor-not-allowed bg-[#2a2a2a] text-white/40"
+                  } ${checkoutLoading ? "cursor-wait" : ""}`}
+                >
+                  <img
+                    src="/Mercado_Pago_idp_LvMgpe_1.svg"
+                    alt=""
+                    className={`h-8 w-auto shrink-0 object-contain sm:h-9 ${
+                      datosComplete && !checkoutLoading ? "opacity-100" : "opacity-45"
                     }`}
-                  >
-                    <img
-                      src="/Mercado_Pago_idp_LvMgpe_1.svg"
-                      alt=""
-                      className={`h-8 w-auto shrink-0 object-contain sm:h-9 ${
-                        datosComplete ? "opacity-100" : "opacity-45"
-                      }`}
-                      width={39}
-                      height={28}
-                      decoding="async"
-                    />
-                    <span className="text-[13px] font-medium opacity-95">Pagar seña</span>
-                  </button>
-                )}
+                    width={39}
+                    height={28}
+                    decoding="async"
+                  />
+                  <span className="text-[13px] font-medium opacity-95">
+                    {checkoutLoading ? "Preparando pago…" : "Pagar seña con Mercado Pago"}
+                  </span>
+                </button>
               </div>
+              {confirmError ? (
+                <p
+                  role="alert"
+                  className="mt-3 rounded-xl border border-red-500/35 bg-red-950/35 px-3 py-2.5 text-center text-[12px] leading-snug text-red-200/95"
+                >
+                  {confirmError}
+                </p>
+              ) : null}
             </section>
           </div>
         )}
 
-        <div className="mt-5">
-          {activeStep === 6 && (
-            <div className="mb-2 flex items-center justify-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
-              <span>Todo listo: confirmá para finalizar</span>
-            </div>
-          )}
-          {confirmError ? (
-            <p
-              role="alert"
-              className="mb-2 rounded-xl border border-red-500/35 bg-red-950/35 px-3 py-2.5 text-center text-[12px] leading-snug text-red-200/95"
-            >
-              {confirmError}
-            </p>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void handleConfirm()}
-            disabled={!canConfirm || confirmLoading}
-            className={`h-[52px] w-full rounded-full border text-[18px] font-heading transition-all ${
-              canConfirm && !confirmLoading
-                ? activeStep === 6
-                  ? "border-[#e2cb9a] bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-white shadow-[0_0_0_1px_rgba(226,203,154,0.2),0_0_24px_rgba(201,169,106,0.22)]"
-                  : "border-transparent bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-white"
-                : "border-transparent bg-[#3a3328] text-white/45"
-            } ${confirmLoading ? "cursor-wait" : ""}`}
-          >
-            {confirmLoading ? "Guardando…" : "Confirmar"}
-          </button>
-        </div>
         </div>
       </main>
 
