@@ -29,6 +29,8 @@ type CalendarItem = {
   isAvailable: boolean;
 };
 
+type OccupiedByDate = Record<string, string[]>;
+
 const treatmentCategories: TreatmentCategory[] = ["Láser", "Facial", "Corporal"];
 
 const treatmentOptions: TreatmentOption[] = [
@@ -249,6 +251,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const [treatmentFirstHintVisible, setTreatmentFirstHintVisible] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [occupiedByDate, setOccupiedByDate] = useState<OccupiedByDate>({});
   const bookingFocusRef = useRef<HTMLDivElement | null>(null);
   const dataSectionRef = useRef<HTMLDivElement | null>(null);
   const paymentSectionRef = useRef<HTMLElement | null>(null);
@@ -271,8 +274,15 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     [visibleMonthDate],
   );
   const visibleMonthLabel = `${monthNames[visibleMonthDate.getMonth()]} ${visibleMonthDate.getFullYear()}`;
-
-  const availableTimes = selectedDate ? getAvailableTimesForDate(selectedDate) : [];
+  const getFreeTimesForDate = useCallback(
+    (dateKey: string) => {
+      const base = getAvailableTimesForDate(dateKey);
+      const occupied = new Set(occupiedByDate[dateKey] ?? []);
+      return base.filter((time) => !occupied.has(time));
+    },
+    [occupiedByDate],
+  );
+  const availableTimes = selectedDate ? getFreeTimesForDate(selectedDate) : [];
   const hasSlot = Boolean(selectedTreatment && selectedDate && selectedTime);
   const datosComplete = Boolean(
     customerName.trim().length >= 2 &&
@@ -304,6 +314,40 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   useEffect(() => {
     prevDatosCompleteRef.current = false;
   }, [selectedTreatmentId, selectedDate, selectedTime]);
+
+  useEffect(() => {
+    const y = visibleMonthDate.getFullYear();
+    const m = visibleMonthDate.getMonth() + 1;
+    const controller = new AbortController();
+
+    const run = async () => {
+      try {
+        const res = await fetch(`/api/reservations/occupied?year=${y}&month=${m}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { occupiedByDate?: OccupiedByDate };
+        if (controller.signal.aborted) return;
+        setOccupiedByDate(data.occupiedByDate ?? {});
+      } catch {
+        if (!controller.signal.aborted) {
+          setOccupiedByDate({});
+        }
+      }
+    };
+
+    void run();
+    return () => controller.abort();
+  }, [visibleMonthDate]);
+
+  useEffect(() => {
+    if (!selectedDate || !selectedTime) return;
+    const freeTimes = getFreeTimesForDate(selectedDate);
+    if (!freeTimes.includes(selectedTime)) {
+      setSelectedTime("");
+    }
+  }, [getFreeTimesForDate, selectedDate, selectedTime]);
 
   const scheduleScrollToPaymentSection = useCallback(() => {
     if (!hasSlot) return;
@@ -537,7 +581,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
             ))}
             {calendarItems.map((day) => {
               const isSelected = day.value === selectedDate;
-              const isDisabled = !day.isCurrentMonth || !day.isAvailable;
+              const isDayAvailable = getFreeTimesForDate(day.value).length > 0;
+              const isDisabled = !day.isCurrentMonth || !isDayAvailable;
 
               return (
                 <button
@@ -563,7 +608,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                       ? "bg-[#1a1a1a] text-[#c89b56] shadow-[0_6px_14px_rgba(0,0,0,0.25)]"
                       : !day.isCurrentMonth
                         ? "text-[#cfbea8]/45"
-                        : day.isAvailable
+                        : isDayAvailable
                           ? "bg-[#eed7ae] text-[#3b2f22]"
                           : "text-[#897a67]"
                   }`}
