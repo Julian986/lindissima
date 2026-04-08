@@ -3,6 +3,8 @@ import type { ReservationDoc } from "./types";
 
 const COLLECTION = "reservations";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -46,5 +48,33 @@ export async function listActiveReservationsForCalendarMonth(
       },
       { projection: { _id: 0, dateKey: 1, timeLocal: 1 } },
     )
+    .toArray();
+}
+
+export function computeReminder24hWindow(now: Date, windowMinutes: number): { lower: Date; upper: Date } {
+  const w = Math.max(1, windowMinutes) * 60 * 1000;
+  return {
+    lower: new Date(now.getTime() + MS_PER_DAY - w),
+    upper: new Date(now.getTime() + MS_PER_DAY + w),
+  };
+}
+
+/**
+ * Reservas confirmadas con opt-in, dentro de la ventana ~24h antes del turno, sin recordatorio ya enviado.
+ */
+export async function findReservationsNeedingReminder24h(
+  db: Db,
+  now: Date,
+  windowMinutes: number,
+): Promise<ReservationDoc[]> {
+  const { lower, upper } = computeReminder24hWindow(now, windowMinutes);
+  return db
+    .collection<ReservationDoc>(COLLECTION)
+    .find({
+      reservationStatus: "confirmed",
+      whatsappOptIn: true,
+      startsAt: { $gte: lower, $lte: upper },
+      $or: [{ waReminder24hSentAt: { $exists: false } }, { waReminder24hSentAt: null }],
+    })
     .toArray();
 }

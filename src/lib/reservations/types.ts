@@ -11,6 +11,9 @@ export type ReservationStatus =
 /** Estado del cobro de seña / total (Mercado Pago) */
 export type PaymentStatus = "not_required" | "pending" | "simulated_paid" | "approved" | "failed" | "refunded";
 
+/** Recordatorio WhatsApp 24 h antes (Meta Cloud API) */
+export type WaReminder24hStatus = "pending" | "sent" | "failed" | "skipped";
+
 export type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
 export type ReservationDoc = {
@@ -43,6 +46,10 @@ export type ReservationDoc = {
   mpPaymentApprovedAt?: Date | null;
   paymentDeadlineAt?: Date | null;
   cancelReason?: string | null;
+  waReminder24hStatus?: WaReminder24hStatus | null;
+  waReminder24hSentAt?: Date | null;
+  waReminder24hLastError?: string | null;
+  waReminder24hMessageId?: string | null;
 };
 
 export type CreateReservationInput = {
@@ -71,4 +78,18 @@ export type MpWebhookEventDoc = {
   detail?: string;
   reservationHexId?: string | null;
   mpPaymentId?: string | null;
+};
+
+/** Auditoría de envíos WhatsApp (recordatorios). */
+export type WaMessageEventDoc = {
+  _id?: ObjectId;
+  reservationId: string;
+  kind: "reminder_24h";
+  sentAt: Date;
+  httpStatus: number | null;
+  /** Resumen no sensible (to, template, etc.). */
+  requestSummary: string;
+  /** Cuerpo de respuesta truncado para soporte. */
+  responseBodyTruncated: string | null;
+  error: string | null;
 };

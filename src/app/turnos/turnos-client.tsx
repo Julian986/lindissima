@@ -382,6 +382,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     return () => cancelAnimationFrame(id);
   }, [hasSlot, selectedTime]);
 
+  /*
   const handleMercadoPagoCheckout = async () => {
     if (!selectedTreatment || !selectedDate || !selectedTime || !datosComplete) {
       return;
@@ -449,6 +450,76 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       };
       sessionStorage.setItem("mp_turno_snapshot", JSON.stringify(snapshot));
       window.location.href = dataPref.initPoint;
+    } catch {
+      setConfirmError("Sin conexión o error de red. Probá de nuevo.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+  */
+
+  const handleConfirmReservation = async () => {
+    if (!selectedTreatment || !selectedDate || !selectedTime || !datosComplete) {
+      return;
+    }
+    setConfirmError(null);
+    setCheckoutLoading(true);
+    try {
+      const pendingBody = {
+        treatmentId: selectedTreatment.id,
+        treatmentName: selectedTreatment.name,
+        subtitle: selectedTreatment.subtitle,
+        category: selectedTreatment.category,
+        dateKey: selectedDate,
+        timeLocal: selectedTime,
+        displayDate: formatDisplayDate(selectedDate),
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        whatsappOptIn,
+      };
+      const resPending = await fetch("/api/reservations/pending", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pendingBody),
+      });
+      const dataPending = (await resPending.json()) as {
+        error?: string;
+        id?: string;
+        checkoutToken?: string;
+      };
+      if (!resPending.ok) {
+        setConfirmError(dataPending.error ?? "No se pudo reservar el turno.");
+        return;
+      }
+      if (!dataPending.id || !dataPending.checkoutToken) {
+        setConfirmError("Respuesta inválida del servidor.");
+        return;
+      }
+
+      const resConfirm = await fetch("/api/reservations/confirm-without-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reservationId: dataPending.id,
+          checkoutToken: dataPending.checkoutToken,
+        }),
+      });
+      const dataConfirm = (await resConfirm.json()) as { error?: string };
+      if (!resConfirm.ok) {
+        setConfirmError(dataConfirm.error ?? "No se pudo confirmar la reserva.");
+        return;
+      }
+
+      const q = new URLSearchParams({
+        treatment: selectedTreatment.name,
+        subtitle: selectedTreatment.subtitle,
+        date: formatDisplayDate(selectedDate),
+        time: selectedTime,
+        name: customerName.trim(),
+        phone: customerPhone.trim(),
+        id: dataPending.id,
+      });
+      window.location.href = `/turnos/confirmado?${q.toString()}`;
     } catch {
       setConfirmError("Sin conexión o error de red. Probá de nuevo.");
     } finally {
@@ -690,7 +761,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                   {activeStep === 4 && (
                     <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
                       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
-                      <span>Necesitamos estos datos antes del pago</span>
+                      <span>Necesitamos estos datos para confirmar el turno</span>
                     </div>
                   )}
                 </div>
@@ -770,6 +841,18 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
               }`}
             >
               <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 5</p>
+              <p className="mt-1 text-[18px] font-heading text-[var(--soft-gray)]">Confirmar reserva</p>
+              <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
+                Al confirmar, el horario queda reservado. La seña puede coordinarse por otro medio con la clínica.
+              </p>
+              {activeStep === 5 && datosComplete && (
+                <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
+                  <span>Tocá el botón para guardar tu turno</span>
+                </div>
+              )}
+              {/*
+              <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 5</p>
               <p className="mt-1 text-[18px] font-heading text-[var(--soft-gray)]">Seña con Mercado Pago</p>
               <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
                 Reservá el horario abonando la seña. Monto y política la define la clínica.
@@ -807,6 +890,21 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                   <span className="text-[13px] font-medium opacity-95">
                     {checkoutLoading ? "Preparando pago…" : "Pagar seña con Mercado Pago"}
                   </span>
+                </button>
+              </div>
+              */}
+              <div className="mt-4">
+                <button
+                  type="button"
+                  disabled={!datosComplete || checkoutLoading}
+                  onClick={() => void handleConfirmReservation()}
+                  className={`flex h-[52px] w-full items-center justify-center rounded-xl text-[16px] font-semibold transition-all ${
+                    datosComplete && !checkoutLoading
+                      ? "bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[#1f1b16] shadow-[0_8px_24px_rgba(201,169,106,0.25)]"
+                      : "cursor-not-allowed bg-[#2a2a2a] text-white/40"
+                  } ${checkoutLoading ? "cursor-wait" : ""}`}
+                >
+                  {checkoutLoading ? "Confirmando…" : "Confirmar reserva"}
                 </button>
               </div>
               {confirmError ? (

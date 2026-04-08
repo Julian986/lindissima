@@ -1,10 +1,17 @@
 import { randomBytes } from "crypto";
 import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
-import type { CreateReservationInput, MpWebhookEventDoc, ReservationDoc, ReservationStatus } from "./types";
+import type {
+  CreateReservationInput,
+  MpWebhookEventDoc,
+  ReservationDoc,
+  ReservationStatus,
+  WaMessageEventDoc,
+} from "./types";
 
 const COLLECTION = "reservations";
 const WEBHOOK_LOGS = "mp_webhook_events";
+const WA_MESSAGE_LOGS = "wa_message_events";
 
 /** Argentina: sin DST desde 2009; offset fijo UTC-3 para armar el instante del turno. */
 export function computeStartsAtUtc(dateKey: string, timeLocal: string): Date | null {
@@ -30,6 +37,7 @@ export async function ensureReservationIndexes(db: Db) {
   if (indexesEnsured) return;
   const col = db.collection(COLLECTION);
   const logs = db.collection(WEBHOOK_LOGS);
+  const waLogs = db.collection(WA_MESSAGE_LOGS);
 
   try {
     await col.dropIndex("uniq_startsAt");
@@ -51,9 +59,16 @@ export async function ensureReservationIndexes(db: Db) {
   await col.createIndex({ reservationStatus: 1, startsAt: 1 }, { name: "by_status_starts" });
   await col.createIndex({ externalReference: 1 }, { sparse: true, name: "by_external_ref" });
   await col.createIndex({ paymentDeadlineAt: 1 }, { sparse: true, name: "by_payment_deadline" });
+  await col.createIndex(
+    { reservationStatus: 1, whatsappOptIn: 1, startsAt: 1 },
+    { name: "by_reminder_scan" },
+  );
 
   await logs.createIndex({ receivedAt: -1 }, { name: "mp_logs_received" });
   await logs.createIndex({ resourceId: 1, receivedAt: -1 }, { name: "mp_logs_resource" });
+
+  await waLogs.createIndex({ sentAt: -1 }, { name: "wa_logs_sent" });
+  await waLogs.createIndex({ reservationId: 1, sentAt: -1 }, { name: "wa_logs_reservation" });
 
   indexesEnsured = true;
 }
@@ -136,6 +151,45 @@ export async function attachPreferenceToReservation(
     { $set: { preferenceId, updatedAt: new Date() } },
   );
   return r.modifiedCount === 1;
+}
+
+/** Confirma sin cobro online (misma validación de token y vencimiento que Checkout Pro). */
+export async function confirmReservationWithoutPayment(
+  db: Db,
+  hexId: string,
+  checkoutToken: string,
+): Promise<{ ok: true } | { ok: false; error: string; code?: string }> {
+  const reservation = await findReservationByHexId(db, hexId);
+  if (!reservation) {
+    return { ok: false, error: "Reserva no encontrada.", code: "NOT_FOUND" };
+  }
+  if (reservation.reservationStatus !== "pending_payment") {
+    return { ok: false, error: "La reserva no admite confirmación en este estado.", code: "STATE" };
+  }
+  if (reservation.checkoutToken !== checkoutToken) {
+    return { ok: false, error: "Token de checkout inválido.", code: "TOKEN" };
+  }
+  if (reservation.paymentDeadlineAt && reservation.paymentDeadlineAt.getTime() < Date.now()) {
+    return { ok: false, error: "La reserva expiró. Creá una nueva reserva.", code: "EXPIRED" };
+  }
+
+  const now = new Date();
+  const result = await db.collection(COLLECTION).updateOne(
+    { _id: reservation._id, reservationStatus: "pending_payment" },
+    {
+      $set: {
+        reservationStatus: "confirmed",
+        paymentStatus: "not_required",
+        updatedAt: now,
+      },
+      $unset: { checkoutToken: "", paymentDeadlineAt: "" },
+    },
+  );
+
+  if (result.modifiedCount !== 1) {
+    return { ok: false, error: "No se pudo confirmar la reserva.", code: "CONFLICT" };
+  }
+  return { ok: true };
 }
 
 export type MpPaymentPayload = {
@@ -238,6 +292,86 @@ export async function updateMpWebhookEvent(
 }
 
 /** Marca reservas pending_payment vencidas como canceladas (libera el slot para nuevo pending). */
+export async function insertWaMessageEvent(db: Db, doc: WaMessageEventDoc): Promise<ObjectId> {
+  const r = await db.collection<WaMessageEventDoc>(WA_MESSAGE_LOGS).insertOne(doc);
+  return r.insertedId;
+}
+
+/**
+ * Marca recordatorio 24h como enviado solo si aún no había waReminder24hSentAt (idempotente).
+ */
+export async function tryMarkReminder24hSent(
+  db: Db,
+  reservationId: ObjectId,
+  messageId: string,
+): Promise<boolean> {
+  const now = new Date();
+  const r = await db.collection(COLLECTION).updateOne(
+    {
+      _id: reservationId,
+      reservationStatus: "confirmed",
+      whatsappOptIn: true,
+      $or: [{ waReminder24hSentAt: { $exists: false } }, { waReminder24hSentAt: null }],
+    },
+    {
+      $set: {
+        waReminder24hStatus: "sent",
+        waReminder24hSentAt: now,
+        waReminder24hMessageId: messageId,
+        waReminder24hLastError: null,
+        updatedAt: now,
+      },
+    },
+  );
+  return r.modifiedCount === 1;
+}
+
+export async function tryMarkReminder24hFailed(
+  db: Db,
+  reservationId: ObjectId,
+  errorMessage: string,
+): Promise<void> {
+  const now = new Date();
+  const truncated = errorMessage.slice(0, 500);
+  await db.collection(COLLECTION).updateOne(
+    {
+      _id: reservationId,
+      reservationStatus: "confirmed",
+      $or: [{ waReminder24hSentAt: { $exists: false } }, { waReminder24hSentAt: null }],
+    },
+    {
+      $set: {
+        waReminder24hStatus: "failed",
+        waReminder24hLastError: truncated,
+        updatedAt: now,
+      },
+    },
+  );
+}
+
+/** Teléfono inválido u opt-out implícito: no reintentar envío automático. */
+export async function tryMarkReminder24hSkipped(
+  db: Db,
+  reservationId: ObjectId,
+  reason: string,
+): Promise<void> {
+  const now = new Date();
+  await db.collection(COLLECTION).updateOne(
+    {
+      _id: reservationId,
+      reservationStatus: "confirmed",
+      $or: [{ waReminder24hSentAt: { $exists: false } }, { waReminder24hSentAt: null }],
+    },
+    {
+      $set: {
+        waReminder24hStatus: "skipped",
+        waReminder24hLastError: reason.slice(0, 500),
+        updatedAt: now,
+      },
+    },
+  );
+}
+
 export async function expirePendingReservations(db: Db): Promise<number> {
   const now = new Date();
   const r = await db.collection(COLLECTION).updateMany(
