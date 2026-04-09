@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat, Playfair_Display } from "next/font/google";
+import { Suspense } from "react";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -36,6 +38,9 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${playfair.variable} min-h-screen bg-[#111111] text-white antialiased`}
       >
+        <Suspense fallback={null}>
+          <GoogleAnalytics />
+        </Suspense>
         {children}
       </body>
     </html>

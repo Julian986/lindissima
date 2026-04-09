@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { event as gaEvent } from "@/lib/gtag";
 
 type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
@@ -509,6 +510,14 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         setConfirmError(dataConfirm.error ?? "No se pudo confirmar la reserva.");
         return;
       }
+
+      gaEvent("book_appointment", {
+        treatment_id: selectedTreatment.id,
+        treatment_name: selectedTreatment.name,
+        category: selectedTreatment.category,
+        date_key: selectedDate,
+        reservation_id: dataPending.id,
+      });
 
       const q = new URLSearchParams({
         treatment: selectedTreatment.name,
