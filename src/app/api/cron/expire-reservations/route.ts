@@ -1,22 +1,13 @@
 import { NextResponse } from "next/server";
+import { cronUnauthorizedResponse } from "@/lib/cron/verify-secret";
 import { getDb } from "@/lib/mongodb";
 import { expirePendingReservations } from "@/lib/reservations/service";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Vencimiento de reservas pending_payment. Protegé con CRON_SECRET en Authorization: Bearer ...
- */
-export async function POST(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "CRON_SECRET no configurado." }, { status: 503 });
-  }
-
-  const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
-  }
+async function run(request: Request) {
+  const denied = cronUnauthorizedResponse(request);
+  if (denied) return denied;
 
   try {
     const db = await getDb();
@@ -26,4 +17,12 @@ export async function POST(request: Request) {
     console.error("[cron/expire-reservations]", e);
     return NextResponse.json({ error: "Fallo al expirar reservas." }, { status: 500 });
   }
+}
+
+export async function GET(request: Request) {
+  return run(request);
+}
+
+export async function POST(request: Request) {
+  return run(request);
 }

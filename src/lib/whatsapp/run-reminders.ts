@@ -7,8 +7,13 @@ import {
   tryMarkReminder24hSent,
   tryMarkReminder24hSkipped,
 } from "@/lib/reservations/service";
-import { getWhatsAppReminderWindowMinutes, isWhatsAppReminderConfigured } from "./config";
-import { normalizeWhatsAppToDigits } from "./phone";
+import {
+  getReminderProvider,
+  getWhatsAppReminderWindowMinutes,
+  isWhatsAppReminderConfigured,
+} from "./config";
+import { digitsToTwilioWhatsAppTo, normalizeWhatsAppToDigits } from "./phone";
+import { sendReminder24hTwilio } from "./send-twilio";
 import { sendReminder24hTemplate } from "./send-template";
 
 function requestSummaryForLog(toDigits: string, reservationId: string): string {
@@ -25,8 +30,10 @@ export type RunWhatsAppReminder24hResult = {
 
 export async function runWhatsAppReminder24hJob(db: Db): Promise<RunWhatsAppReminder24hResult> {
   if (!isWhatsAppReminderConfigured()) {
-    throw new Error("WHATSAPP_* no configurado");
+    throw new Error("Recordatorios WhatsApp no configurados (Meta o Twilio según WHATSAPP_PROVIDER).");
   }
+
+  const provider = getReminderProvider();
 
   await ensureReservationIndexes(db);
   const windowMinutes = getWhatsAppReminderWindowMinutes();
@@ -55,7 +62,27 @@ export async function runWhatsAppReminder24hJob(db: Db): Promise<RunWhatsAppRemi
       continue;
     }
 
-    const send = await sendReminder24hTemplate(toDigits, r);
+    let send;
+    if (provider === "twilio") {
+      const toWa = digitsToTwilioWhatsAppTo(toDigits);
+      if (!toWa) {
+        skippedCount += 1;
+        await tryMarkReminder24hSkipped(db, r._id, "invalid_phone_e164");
+        await insertWaMessageEvent(db, {
+          reservationId,
+          kind: "reminder_24h",
+          sentAt: new Date(),
+          httpStatus: null,
+          requestSummary: requestSummaryForLog("(invalid_e164)", reservationId),
+          responseBodyTruncated: null,
+          error: "invalid_phone_e164",
+        });
+        continue;
+      }
+      send = await sendReminder24hTwilio(toWa, r);
+    } else {
+      send = await sendReminder24hTemplate(toDigits, r);
+    }
     if (!send.ok) {
       failedCount += 1;
       await tryMarkReminder24hFailed(db, r._id, send.error);

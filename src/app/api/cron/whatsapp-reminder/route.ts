@@ -1,37 +1,49 @@
 import { NextResponse } from "next/server";
+import { cronUnauthorizedResponse } from "@/lib/cron/verify-secret";
 import { getDb } from "@/lib/mongodb";
-import { isWhatsAppReminderConfigured } from "@/lib/whatsapp/config";
+import { getReminderProvider, isWhatsAppReminderConfigured } from "@/lib/whatsapp/config";
 import { runWhatsAppReminder24hJob } from "@/lib/whatsapp/run-reminders";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Recordatorio WhatsApp ~24h antes del turno. Protegé con CRON_SECRET en Authorization: Bearer ...
- */
-export async function POST(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "CRON_SECRET no configurado." }, { status: 503 });
+function notConfiguredMessage(): string {
+  const p = getReminderProvider();
+  if (p === "twilio") {
+    return (
+      "Twilio no configurado: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM, " +
+      "TWILIO_REMINDER_CONTENT_SID (y WHATSAPP_PROVIDER=twilio si usás ambos proveedores)."
+    );
   }
+  return (
+    "Meta no configurado: WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, " +
+    "WHATSAPP_TEMPLATE_NAME, WHATSAPP_TEMPLATE_LANG."
+  );
+}
 
-  const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
-  }
+async function run(request: Request) {
+  const denied = cronUnauthorizedResponse(request);
+  if (denied) return denied;
 
   if (!isWhatsAppReminderConfigured()) {
-    return NextResponse.json(
-      { error: "WhatsApp no configurado (WHATSAPP_ACCESS_TOKEN, PHONE_NUMBER_ID, TEMPLATE_NAME, TEMPLATE_LANG)." },
-      { status: 503 },
-    );
+    return NextResponse.json({ error: notConfiguredMessage() }, { status: 503 });
   }
 
   try {
     const db = await getDb();
     const result = await runWhatsAppReminder24hJob(db);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, provider: getReminderProvider() });
   } catch (e) {
     console.error("[cron/whatsapp-reminder]", e);
     return NextResponse.json({ error: "Fallo al procesar recordatorios WhatsApp." }, { status: 500 });
   }
+}
+
+/** Vercel Cron invoca GET con Authorization: Bearer CRON_SECRET */
+export async function GET(request: Request) {
+  return run(request);
+}
+
+/** Pruebas manuales (curl, Postman) */
+export async function POST(request: Request) {
+  return run(request);
 }
