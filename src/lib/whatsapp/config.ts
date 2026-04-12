@@ -4,8 +4,9 @@ function parsePositiveInt(raw: string | undefined, fallback: number, min: number
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
+/** Máx. 1440 (24 h) para cron diario (Vercel Hobby) con ventana ancha. */
 export function getWhatsAppReminderWindowMinutes(): number {
-  return parsePositiveInt(process.env.WHATSAPP_REMINDER_WINDOW_MINUTES, 15, 1, 120);
+  return parsePositiveInt(process.env.WHATSAPP_REMINDER_WINDOW_MINUTES, 15, 1, 1440);
 }
 
 export function getWhatsAppGraphApiVersion(): string {
