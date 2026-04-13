@@ -1,5 +1,5 @@
 import type { Db } from "mongodb";
-import { findReservationsNeedingReminder24h } from "@/lib/reservations/admin-queries";
+import { findReservationsNeedingReminderNextDayAr } from "@/lib/reservations/admin-queries";
 import {
   ensureReservationIndexes,
   insertWaMessageEvent,
@@ -9,7 +9,6 @@ import {
 } from "@/lib/reservations/service";
 import {
   getReminderProvider,
-  getWhatsAppReminderWindowMinutes,
   isWhatsAppReminderConfigured,
 } from "./config";
 import { digitsToTwilioWhatsAppTo, normalizeWhatsAppToDigits } from "./phone";
@@ -36,9 +35,8 @@ export async function runWhatsAppReminder24hJob(db: Db): Promise<RunWhatsAppRemi
   const provider = getReminderProvider();
 
   await ensureReservationIndexes(db);
-  const windowMinutes = getWhatsAppReminderWindowMinutes();
   const now = new Date();
-  const candidates = await findReservationsNeedingReminder24h(db, now, windowMinutes);
+  const candidates = await findReservationsNeedingReminderNextDayAr(db, now);
 
   let sentCount = 0;
   let failedCount = 0;

@@ -78,3 +78,37 @@ export async function findReservationsNeedingReminder24h(
     })
     .toArray();
 }
+
+function ymdInArgentina(date: Date): string {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = fmt.formatToParts(date);
+  const y = parts.find((p) => p.type === "year")?.value ?? "0000";
+  const m = parts.find((p) => p.type === "month")?.value ?? "01";
+  const d = parts.find((p) => p.type === "day")?.value ?? "01";
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Recordatorio D-1 (10am cron diario): todos los turnos del día siguiente en hora Argentina.
+ */
+export async function findReservationsNeedingReminderNextDayAr(
+  db: Db,
+  now: Date,
+): Promise<ReservationDoc[]> {
+  const tomorrowUtc = new Date(now.getTime() + MS_PER_DAY);
+  const targetDateKey = ymdInArgentina(tomorrowUtc);
+  return db
+    .collection<ReservationDoc>(COLLECTION)
+    .find({
+      reservationStatus: "confirmed",
+      whatsappOptIn: true,
+      dateKey: targetDateKey,
+      $or: [{ waReminder24hSentAt: { $exists: false } }, { waReminder24hSentAt: null }],
+    })
+    .toArray();
+}
