@@ -5,7 +5,7 @@ import { ObjectId as ObjectIdCtor, type ObjectId } from "mongodb";
 import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
 import { CUSTOMER_PROFILE_COOKIE, readCustomerProfilePhoneDigits } from "@/lib/customer/customer-session";
 import { getScheduleTimesForDate } from "@/lib/booking/salon-schedule";
-import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
+import { isPublicLeadTimeViolated, isPastSlotForPublic } from "@/lib/booking/public-slot-lead";
 import { listAgendaBlocksForDate } from "@/lib/booking/agenda-blocks";
 import { getDb } from "@/lib/mongodb";
 import { findReservationByHexId, ensureReservationIndexes } from "@/lib/reservations/service";
@@ -52,15 +52,16 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     }
 
     // Si la reserva es de web pública, aplicar regla de anticipación
-    if (doc.source === "app_turnos" && isPublicLeadTimeViolated(dateKey)) {
+    if (isPublicLeadTimeViolated(dateKey)) {
       return NextResponse.json({
         rows: [] satisfies ReprogramDayRow[],
-        leadTimeError: "Este día no cumple los 2 días mínimos de anticipación.",
+        leadTimeError: "No podés reprogramar a una fecha pasada.",
       });
     }
 
-    // Horarios de la grilla para ese día
-    const grillaTimes = getScheduleTimesForDate(dateKey);
+    // Horarios de la grilla para ese día (para hoy, excluir slots ya pasados)
+    const allGrillaTimes = getScheduleTimesForDate(dateKey);
+    const grillaTimes = allGrillaTimes.filter((t) => !isPastSlotForPublic(dateKey, t));
     if (grillaTimes.length === 0) {
       return NextResponse.json({ rows: [] satisfies ReprogramDayRow[] });
     }

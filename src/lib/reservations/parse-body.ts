@@ -27,6 +27,7 @@ export function parseCreateReservationBody(
   const customerName = String(b.customerName ?? "").trim();
   const customerPhone = String(b.customerPhone ?? "").trim();
   const whatsappOptIn = b.whatsappOptIn === true;
+  const source = typeof b.source === "string" ? b.source.trim() : undefined;
 
   if (!treatmentId) return { ok: false, message: "Falta el tratamiento." };
   if (!treatmentName) return { ok: false, message: "Falta el nombre del tratamiento." };
@@ -52,6 +53,7 @@ export function parseCreateReservationBody(
       customerName,
       customerPhone,
       whatsappOptIn,
+      source,
     },
   };
 }

@@ -69,6 +69,7 @@ export type CreateReservationInput = {
   customerName: string;
   customerPhone: string;
   whatsappOptIn: boolean;
+  source?: string;
 };
 
 /** Auditoría de notificaciones Mercado Pago (webhook / IPN). */

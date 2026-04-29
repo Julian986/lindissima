@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { event as gaEvent } from "@/lib/gtag";
 import { getScheduleTimesForDate } from "@/lib/booking/salon-schedule";
-import { minPublicBookableDateKey } from "@/lib/booking/public-slot-lead";
+import { argentinaCurrentTimeHHMM, argentinaTodayDateKey, minPublicBookableDateKey } from "@/lib/booking/public-slot-lead";
 
 type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
@@ -150,7 +150,13 @@ function formatDateKey(date: Date) {
 /** Devuelve los horarios de grilla para un día, o [] si el día no es reservable. */
 function getAvailableTimesForDate(value: string): string[] {
   if (value < minPublicBookableDateKey()) return [];
-  return getScheduleTimesForDate(value);
+  const slots = getScheduleTimesForDate(value);
+  // Para el día de hoy, ocultar slots que ya pasaron
+  if (value === argentinaTodayDateKey()) {
+    const currentTime = argentinaCurrentTimeHHMM();
+    return slots.filter((t) => t > currentTime);
+  }
+  return slots;
 }
 
 function buildCalendarItems(year: number, monthIndex: number) {

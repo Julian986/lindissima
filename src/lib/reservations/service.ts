@@ -3,7 +3,7 @@ import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
 import { getScheduleTimesForDate, formatSalonDisplayDate } from "@/lib/booking/salon-schedule";
-import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
+import { isPublicLeadTimeViolated, isPastSlotForPublic } from "@/lib/booking/public-slot-lead";
 import type {
   CreateReservationInput,
   MpWebhookEventDoc,
@@ -86,10 +86,19 @@ export async function insertPendingReservation(
   | { id: string; checkoutToken: string; externalReference: string }
   | { error: string; code?: string }
 > {
-  if (isPublicLeadTimeViolated(input.dateKey)) {
+  const isPanel = input.source === "panel";
+
+  if (!isPanel && isPublicLeadTimeViolated(input.dateKey)) {
     return {
-      error: "El turno debe reservarse con al menos 2 días de anticipación.",
+      error: "No podés reservar en una fecha pasada.",
       code: "LEAD_TIME_VIOLATION",
+    };
+  }
+
+  if (!isPanel && isPastSlotForPublic(input.dateKey, input.timeLocal)) {
+    return {
+      error: "Este horario ya pasó. Elegí uno más adelante.",
+      code: "SLOT_IN_PAST",
     };
   }
 
