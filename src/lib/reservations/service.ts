@@ -1,6 +1,9 @@
 import { randomBytes } from "crypto";
 import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
+import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
+import { getScheduleTimesForDate, formatSalonDisplayDate } from "@/lib/booking/salon-schedule";
+import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import type {
   CreateReservationInput,
   MpWebhookEventDoc,
@@ -8,6 +11,9 @@ import type {
   ReservationStatus,
   WaMessageEventDoc,
 } from "./types";
+
+const RESCHEDULEABLE_STATUSES: ReservationStatus[] = ["confirmed", "pending_payment"];
+const CANCELLABLE_STATUSES: ReservationStatus[] = ["confirmed", "pending_payment"];
 
 const COLLECTION = "reservations";
 const WEBHOOK_LOGS = "mp_webhook_events";
@@ -80,6 +86,13 @@ export async function insertPendingReservation(
   | { id: string; checkoutToken: string; externalReference: string }
   | { error: string; code?: string }
 > {
+  if (isPublicLeadTimeViolated(input.dateKey)) {
+    return {
+      error: "El turno debe reservarse con al menos 2 días de anticipación.",
+      code: "LEAD_TIME_VIOLATION",
+    };
+  }
+
   const startsAt = computeStartsAtUtc(input.dateKey, input.timeLocal);
   if (!startsAt) {
     return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
@@ -100,6 +113,7 @@ export async function insertPendingReservation(
     startsAt,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
+    customerPhoneDigits: canonicalPhoneDigitsAR(input.customerPhone),
     whatsappOptIn: input.whatsappOptIn,
     reservationStatus: "pending_payment" as ReservationStatus,
     paymentStatus: "pending" as const,
@@ -370,6 +384,153 @@ export async function tryMarkReminder24hSkipped(
       },
     },
   );
+}
+
+/**
+ * Reprograma una reserva activa del cliente o del panel.
+ * Para reservas de app_turnos (cliente web) aplica la regla de 2 días de anticipación.
+ * Verifica que el slot esté en la grilla del salón y que no esté ya ocupado.
+ */
+export async function rescheduleReservation(
+  db: Db,
+  input: {
+    reservationHexId: string;
+    newDateKey: string;
+    newTimeLocal: string;
+    now: Date;
+    actor: "panel" | "customer";
+    customerCanonicalDigits?: string | null;
+  },
+): Promise<{ ok: true } | { error: string; code?: string }> {
+  await ensureReservationIndexes(db);
+  const hex = input.reservationHexId.trim();
+  const doc = await findReservationByHexId(db, hex);
+  if (!doc) return { error: "Turno no encontrado.", code: "NOT_FOUND" };
+  if (!RESCHEDULEABLE_STATUSES.includes(doc.reservationStatus)) {
+    return { error: "Este turno no se puede reprogramar (cancelado o finalizado).", code: "NOT_MOVABLE" };
+  }
+
+  if (input.actor === "customer") {
+    const canon = input.customerCanonicalDigits?.trim();
+    if (!canon) return { error: "Tenés que iniciar sesión en tu perfil.", code: "UNAUTHORIZED" };
+    const docDigits = doc.customerPhoneDigits ?? canonicalPhoneDigitsAR(doc.customerPhone);
+    if (!customerPhoneDigitsQueryValues(canon).includes(docDigits)) {
+      return { error: "No podés modificar un turno de otro cliente.", code: "FORBIDDEN" };
+    }
+  }
+
+  const newKey = input.newDateKey.trim();
+  const newTime = input.newTimeLocal.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newKey) || !/^\d{2}:\d{2}$/.test(newTime)) {
+    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+  }
+  if (doc.dateKey === newKey && doc.timeLocal === newTime) {
+    return { error: "Elegí un día u horario distinto al actual.", code: "NO_CHANGE" };
+  }
+
+  const startsAt = computeStartsAtUtc(newKey, newTime);
+  if (!startsAt) return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+
+  // Anticipación mínima solo para reservas originadas desde la web pública
+  if (input.actor === "customer" && doc.source === "app_turnos") {
+    if (isPublicLeadTimeViolated(newKey, input.now)) {
+      return {
+        error: "Los turnos web se pueden reservar con al menos 2 días de anticipación.",
+        code: "LEAD_TIME",
+      };
+    }
+  }
+
+  // El horario tiene que estar en la grilla del salón para ese día
+  const grillaTimes = getScheduleTimesForDate(newKey);
+  if (!grillaTimes.includes(newTime)) {
+    return { error: "Ese horario no está en la grilla del salón para ese día.", code: "SLOT_UNAVAILABLE" };
+  }
+
+  // No debe haber otra reserva activa en ese slot (excluyendo la actual)
+  let excludeOid: ObjectId;
+  try {
+    excludeOid = new ObjectIdCtor(hex);
+  } catch {
+    return { error: "Turno no encontrado.", code: "NOT_FOUND" };
+  }
+  const collision = await db.collection<ReservationDoc>(COLLECTION).findOne({
+    _id: { $ne: excludeOid },
+    dateKey: newKey,
+    timeLocal: newTime,
+    reservationStatus: { $in: ["pending_payment", "confirmed"] },
+  });
+  if (collision) {
+    return { error: "Ese horario ya está ocupado. Elegí otro.", code: "SLOT_UNAVAILABLE" };
+  }
+
+  const result = await db.collection<ReservationDoc>(COLLECTION).updateOne(
+    { _id: doc._id, reservationStatus: doc.reservationStatus },
+    {
+      $set: {
+        dateKey: newKey,
+        timeLocal: newTime,
+        startsAt,
+        displayDate: formatSalonDisplayDate(newKey),
+        updatedAt: new Date(),
+      },
+      $unset: { waReminder24hSentAt: "" },
+    },
+  );
+  if (result.modifiedCount !== 1) {
+    return { error: "No se pudo actualizar el turno. Probá de nuevo.", code: "CONFLICT" };
+  }
+  return { ok: true as const };
+}
+
+/**
+ * Cancela una reserva activa.
+ * Cliente: solo su propio WhatsApp; panel: cualquier turno cancelable.
+ */
+export async function cancelReservation(
+  db: Db,
+  input: {
+    reservationHexId: string;
+    now: Date;
+    actor: "panel" | "customer";
+    customerCanonicalDigits?: string | null;
+    cancelReason?: string | null;
+  },
+): Promise<{ ok: true } | { error: string; code?: string }> {
+  await ensureReservationIndexes(db);
+  const hex = input.reservationHexId.trim();
+  const doc = await findReservationByHexId(db, hex);
+  if (!doc) return { error: "Turno no encontrado.", code: "NOT_FOUND" };
+  if (!CANCELLABLE_STATUSES.includes(doc.reservationStatus)) {
+    return { error: "Este turno no se puede cancelar.", code: "NOT_CANCELLABLE" };
+  }
+
+  if (input.actor === "customer") {
+    const canon = input.customerCanonicalDigits?.trim();
+    if (!canon) return { error: "Tenés que iniciar sesión en tu perfil.", code: "UNAUTHORIZED" };
+    const docDigits = doc.customerPhoneDigits ?? canonicalPhoneDigitsAR(doc.customerPhone);
+    if (!customerPhoneDigitsQueryValues(canon).includes(docDigits)) {
+      return { error: "No podés modificar un turno de otro cliente.", code: "FORBIDDEN" };
+    }
+  }
+
+  const reason = String(input.cancelReason ?? "").trim().slice(0, 160) || undefined;
+  const result = await db.collection<ReservationDoc>(COLLECTION).updateOne(
+    { _id: doc._id, reservationStatus: doc.reservationStatus },
+    {
+      $set: {
+        reservationStatus: "cancelled",
+        cancelledBy: input.actor,
+        ...(reason ? { cancelReason: reason } : {}),
+        updatedAt: input.now,
+      },
+      $unset: { waReminder24hSentAt: "" },
+    },
+  );
+  if (result.modifiedCount !== 1) {
+    return { error: "No se pudo cancelar el turno. Probá de nuevo.", code: "CONFLICT" };
+  }
+  return { ok: true as const };
 }
 
 export async function expirePendingReservations(db: Db): Promise<number> {

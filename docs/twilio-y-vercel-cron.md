@@ -1,4 +1,4 @@
-# Twilio WhatsApp + Vercel Cron (recordatorios 24 h)
+# Twilio WhatsApp + Vercel Cron (recordatorios víspera)
 
 Guía para dejar funcionando recordatorios con **número virtual Twilio** y disparos automáticos en **Vercel**.
 
@@ -6,7 +6,7 @@ Guía para dejar funcionando recordatorios con **número virtual Twilio** y disp
 
 1. Creá cuenta en [https://www.twilio.com](https://www.twilio.com).
 2. En la [Consola](https://console.twilio.com/), anotá **Account SID** y **Auth Token** (Account → API keys & tokens).
-3. **WhatsApp**:
+3. **WhatsApp**: 
    - **Sandbox** (pruebas): unís tu WhatsApp personal con el código que muestra Twilio; solo podés enviar a números que se unieron.
    - **Producción**: solicitá un número de WhatsApp con Twilio (flujo “WhatsApp Sender” / aprobación según país). Sin sandbox, los clientes no tienen que “unirse”.
 
@@ -45,8 +45,9 @@ Definí en el proyecto → **Settings → Environment Variables**:
 | `TWILIO_AUTH_TOKEN` | Auth Token |
 | `TWILIO_WHATSAPP_FROM` | `whatsapp:+…` o `+…` |
 | `TWILIO_REMINDER_CONTENT_SID` | `HX…` de la plantilla aprobada |
-| `WHATSAPP_REMINDER_WINDOW_MINUTES` | Opcional (default 15). Ventana alrededor de “24 h antes” para no perder el turno si el cron se retrasa. |
 | `MONGODB_URI` | Ya la tenés para la app |
+
+> `WHATSAPP_REMINDER_WINDOW_MINUTES` existía para la lógica antigua (ventana alrededor de “24 h antes” respecto del instante del job). **La selección actual de candidatos usa el día siguiente en Argentina** (`findReservationsNeedingReminderNextDayAr`); esa variable **no aplica** a esa query. Podés dejarla en `.env` por compatibilidad o quitarla.
 
 **No** uses prefijo `NEXT_PUBLIC_` en secretos de Twilio.
 
@@ -64,11 +65,9 @@ Este repo usa **un solo cron** en `vercel.json`:
 
 Si necesitás otra zona horaria, cambiá el primer campo de minutos/hora en el cron (siempre en **UTC**). En Hobby la ejecución puede caer en cualquier momento **dentro de esa hora** (no es al minuto exacto).
 
-### Ventana de recordatorio con cron diario
+### Criterio de candidatos con cron diario
 
-La query busca turnos con `startsAt` en **24 h ± WHATSAPP_REMINDER_WINDOW_MINUTES** respecto del momento en que corre el job. Con un solo disparo al día, un margen de **15 minutos es demasiado chico** y se pierden turnos. Configurá por ejemplo:
-
-`WHATSAPP_REMINDER_WINDOW_MINUTES=720` (12 horas) o `1440` (24 horas).
+La query busca reservas cuya **fecha del turno es mañana** en **`America/Argentina/Buenos_Aires`** (`dateKey`), estado `confirmed`, `whatsappOptIn: true`, sin `waReminder24hSentAt`. Así un único disparo diario cubre todos los turnos del día siguiente en el calendario del negocio, sin depender de “exactamente 24 h antes” del `startsAt`.
 
 Las rutas `/api/cron/whatsapp-reminder` y `/api/cron/expire-reservations` siguen existiendo para **pruebas manuales** (GET/POST con `Authorization: Bearer CRON_SECRET`).
 
@@ -98,7 +97,7 @@ curl -s -H "Authorization: Bearer TU_CRON_SECRET" \
 
 ## 7. Candidatos a recordatorio (Mongo)
 
-Igual que con Meta: reserva `confirmed`, `whatsappOptIn: true`, `startsAt` dentro de **24 h ± ventana**, sin `waReminder24hSentAt`.
+Igual que con Meta: reserva `confirmed`, `whatsappOptIn: true`, **`dateKey` = mañana en Argentina**, sin `waReminder24hSentAt`. Ver flujo detallado en `docs/recordatorios-flujo-y-cron.md`.
 
 ## 8. Meta en lugar de Twilio
 

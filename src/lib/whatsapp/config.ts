@@ -86,6 +86,7 @@ export function getTwilioReminderConfig(): TwilioReminderConfig {
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
   const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM?.trim();
+  // LINDISSIMA - SID a actualizar cuando apruebe Meta
   const contentSid = process.env.TWILIO_REMINDER_CONTENT_SID?.trim();
   if (!accountSid) throw new Error("TWILIO_ACCOUNT_SID no está definida");
   if (!authToken) throw new Error("TWILIO_AUTH_TOKEN no está definida");

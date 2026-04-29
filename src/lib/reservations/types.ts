@@ -16,6 +16,8 @@ export type WaReminder24hStatus = "pending" | "sent" | "failed" | "skipped";
 
 export type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
+export type ReservationSource = "app_turnos" | "panel";
+
 export type ReservationDoc = {
   _id: ObjectId;
   treatmentId: string;
@@ -26,12 +28,14 @@ export type ReservationDoc = {
   timeLocal: string;
   displayDate: string;
   startsAt: Date;
+  durationMinutes?: number;
   customerName: string;
   customerPhone: string;
   whatsappOptIn: boolean;
   reservationStatus: ReservationStatus;
   paymentStatus: PaymentStatus;
-  source: "app_turnos";
+  source: ReservationSource;
+  cancelledBy?: "panel" | "customer" | null;
   createdAt: Date;
   updatedAt: Date;
   /** Secreto de un solo uso para crear la preferencia Checkout Pro (no es password del usuario). */
@@ -45,6 +49,8 @@ export type ReservationDoc = {
   mpPaymentStatusLast?: string | null;
   mpPaymentApprovedAt?: Date | null;
   paymentDeadlineAt?: Date | null;
+  /** Teléfono normalizado a "549XXXXXXXXXX" para cruzar reservas del mismo WhatsApp. */
+  customerPhoneDigits?: string;
   cancelReason?: string | null;
   waReminder24hStatus?: WaReminder24hStatus | null;
   waReminder24hSentAt?: Date | null;

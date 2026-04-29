@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { verifyPanelCookie } from "@/lib/panel-turnos-auth";
 import { listReservationsForCalendarMonth } from "@/lib/reservations/admin-queries";
+import { listAgendaBlocksForCalendarMonth, type SalonAgendaBlockDoc } from "@/lib/booking/agenda-blocks";
 import type { ReservationDoc } from "@/lib/reservations/types";
 
 function serialize(r: ReservationDoc) {
@@ -63,10 +64,28 @@ export async function GET(request: Request) {
 
   try {
     const db = await getDb();
-    const list = await listReservationsForCalendarMonth(db, y, m);
-    return NextResponse.json({ reservations: list.map(serialize) });
+    const [list, blocks] = await Promise.all([
+      listReservationsForCalendarMonth(db, y, m),
+      listAgendaBlocksForCalendarMonth(db, y, m),
+    ]);
+    return NextResponse.json({
+      reservations: list.map(serialize),
+      agendaBlocks: blocks.map(serializeBlock),
+    });
   } catch (e) {
     console.error("[panel-turnos reservations GET]", e);
     return NextResponse.json({ error: "No se pudieron cargar las reservas." }, { status: 500 });
   }
+}
+
+function serializeBlock(b: SalonAgendaBlockDoc) {
+  return {
+    id: b._id.toHexString(),
+    anchorDateKey: b.anchorDateKey,
+    timeLocal: b.timeLocal,
+    durationMinutes: b.durationMinutes,
+    scope: b.scope,
+    recurrence: b.recurrence ?? null,
+    notes: b.notes ?? null,
+  };
 }

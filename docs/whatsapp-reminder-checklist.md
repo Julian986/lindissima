@@ -4,9 +4,9 @@
 
 2. **Meta Business**: plantilla **aprobada** con `{{1}}` nombre, `{{2}}` tratamiento, `{{3}}` fecha, `{{4}}` hora. Quinto parámetro: `WHATSAPP_TEMPLATE_BODY_PARAM_5` + `{{5}}`.
 
-3. **Variables servidor**: Meta → `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE_NAME`, `WHATSAPP_TEMPLATE_LANG`. Twilio → `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, `TWILIO_REMINDER_CONTENT_SID`. Común: `WHATSAPP_REMINDER_WINDOW_MINUTES` (opcional), `CRON_SECRET`, `MONGODB_URI`.
+3. **Variables servidor**: Meta → `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE_NAME`, `WHATSAPP_TEMPLATE_LANG`. Twilio → `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, `TWILIO_REMINDER_CONTENT_SID`. Común: `CRON_SECRET`, `MONGODB_URI`.
 
-4. **Cron Vercel (Hobby)**: una vez al día — `GET /api/cron/daily` (ver `vercel.json`; hora en UTC, default ≈ 10:00 Argentina). Incluye expiración de pendientes + recordatorios. Con cron diario, subí **`WHATSAPP_REMINDER_WINDOW_MINUTES`** (ej. **720**). Para pruebas: mismo `Authorization` en `/api/cron/whatsapp-reminder` o `/api/cron/expire-reservations`.
+4. **Cron Vercel (Hobby)**: una vez al día — `GET /api/cron/daily` (ver `vercel.json`; hora en UTC, default ≈ 10:00 Argentina). Incluye expiración de pendientes + recordatorios. Los candidatos son turnos **del día siguiente en Argentina** (`dateKey`), no una ventana “24 h antes” respecto del instante del job. Para pruebas: mismo `Authorization` en `/api/cron/whatsapp-reminder` o `/api/cron/expire-reservations`. Detalle: `docs/recordatorios-flujo-y-cron.md`.
 
 5. **Candidata**: reserva `confirmed`, `whatsappOptIn: true`, `startsAt` dentro de `now + 24h ± ventana`, sin `waReminder24hSentAt`.
 
